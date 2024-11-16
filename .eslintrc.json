@@ -38,7 +38,9 @@
           "caseInsensitive": true
         }
       }
-    ]
+    ],
+    // Disable Tailwind's custom class name warning
+    "tailwindcss/no-custom-classname": "off"
   },
   "ignorePatterns": [
     "components/ui/**"
