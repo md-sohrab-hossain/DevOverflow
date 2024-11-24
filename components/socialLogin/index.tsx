@@ -1,22 +1,25 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
 
 import { Button } from "../ui/button";
 
 interface SocialProvider {
-  name: string;
+  name: "github" | "google";
   icon: string;
   alt: string;
 }
 
 const providers: SocialProvider[] = [
-  { name: "Github", icon: "/icons/github.svg", alt: "Github Logo" },
-  { name: "Google", icon: "/icons/google.svg", alt: "Google Logo" },
+  { name: "github", icon: "/icons/github.svg", alt: "Github Logo" },
+  { name: "google", icon: "/icons/google.svg", alt: "Google Logo" },
 ];
 
-const SocialLogin = ({ onLogin }: { onLogin: (provider: string) => void }) => {
+const SocialLogin = ({
+  onLogin,
+}: {
+  onLogin: (provider: "github" | "google") => void;
+}) => {
   return (
     <div className="mt-10 flex flex-wrap gap-2.5">
       {providers.map((provider) => (

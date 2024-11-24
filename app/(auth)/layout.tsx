@@ -1,14 +1,30 @@
 "use client";
 
 import Image from "next/image";
+import { signIn } from "next-auth/react";
 import { ReactNode } from "react";
 
 import SocialLogin from "@/components/socialLogin";
+import ROUTES from "@/constants/routes";
+import { toast } from "@/hooks/use-toast";
 
 const AuthLayout = ({ children }: { children: ReactNode }) => {
-  const handleLogin = (provider: string) => {
-    console.log(`${provider} login clicked`);
-    // Here you can replace the log with actual authentication logic
+  const handleSignIn = async (provider: "github" | "google") => {
+    try {
+      await signIn(provider, {
+        redirectTo: ROUTES.HOME, // Where to redirect after successful login
+        redirect: false, // Prevent automatic redirect
+      });
+    } catch (error) {
+      toast({
+        title: "Sign-in Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during sign-in",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -32,7 +48,7 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
           />
         </div>
         {children}
-        <SocialLogin onLogin={handleLogin} />
+        <SocialLogin onLogin={handleSignIn} />
       </section>
     </main>
   );
