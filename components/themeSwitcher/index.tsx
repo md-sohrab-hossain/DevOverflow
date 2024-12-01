@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
-type Theme = "light" | "dark" | "system";
+type Theme = 'light' | 'dark' | 'system';
 
 const ThemeIcon = ({ theme, style }: { theme: Theme; style?: string }) => {
   const iconMap: Record<Theme, string> = {
-    light: "/icons/sun.svg",
-    dark: "/icons/moon.svg",
-    system: "/icons/computer.svg",
+    light: '/icons/sun.svg',
+    dark: '/icons/moon.svg',
+    system: '/icons/computer.svg',
   };
 
   return (
@@ -29,7 +29,7 @@ const ThemeIcon = ({ theme, style }: { theme: Theme; style?: string }) => {
       loading="eager"
       src={iconMap[theme]}
       alt={`${theme} mode logo`}
-      className={style || ""}
+      className={style || ''}
     />
   );
 };
@@ -65,15 +65,15 @@ const ThemeSwitcher = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => handleThemeChange("light")}>
+        <DropdownMenuItem onClick={() => handleThemeChange('light')}>
           <ThemeIcon theme="light" />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleThemeChange("dark")}>
+        <DropdownMenuItem onClick={() => handleThemeChange('dark')}>
           <ThemeIcon theme="dark" />
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleThemeChange("system")}>
+        <DropdownMenuItem onClick={() => handleThemeChange('system')}>
           <ThemeIcon theme="system" />
           System
         </DropdownMenuItem>

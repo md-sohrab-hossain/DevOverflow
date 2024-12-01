@@ -1,7 +1,7 @@
-import Image from "next/image";
-import { ReactNode } from "react";
+import Image from 'next/image';
+import { ReactNode } from 'react';
 
-import SocialLogin from "@/components/socialLogin";
+import SocialLogin from '@/components/socialLogin';
 
 const AuthLayout = ({ children }: { children: ReactNode }) => {
   return (
@@ -10,9 +10,7 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
         <div className="flex items-center justify-between gap-2">
           <div className="space-y-2.5">
             <h1 className="h2-bold text-dark-100_light900">Join DevFlow</h1>
-            <p className="paragraph-regular text-dark500_light400">
-              To get your questions answered
-            </p>
+            <p className="paragraph-regular text-dark500_light400">To get your questions answered</p>
           </div>
 
           <Image
