@@ -9,17 +9,22 @@ import { sidebarLinks } from '@/constants';
 import { cn } from '@/lib/utils';
 
 const NavLinkItem = ({
+  id,
   item,
   isActive,
   isMobileNav,
 }: {
+  id: string;
   isActive: boolean;
   isMobileNav: boolean;
   item: (typeof sidebarLinks)[0];
 }) => {
+  const resolvedRoute: string | ((id: string) => string) =
+    typeof item.route === 'function' ? item.route(id) : item.route;
+
   const linkComponent = (
     <Link
-      href={item.route}
+      href={resolvedRoute}
       key={item.label}
       className={cn(
         isActive ? 'primary-gradient rounded-lg text-light-900' : 'text-dark300_light900',
@@ -32,11 +37,11 @@ const NavLinkItem = ({
   );
 
   return isMobileNav ? (
-    <SheetClose asChild key={item.route}>
+    <SheetClose asChild key={resolvedRoute}>
       {linkComponent}
     </SheetClose>
   ) : (
-    <React.Fragment key={item.route}>{linkComponent}</React.Fragment>
+    <React.Fragment key={resolvedRoute}>{linkComponent}</React.Fragment>
   );
 };
 

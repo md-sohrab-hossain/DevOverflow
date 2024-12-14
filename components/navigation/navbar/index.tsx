@@ -2,8 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
-import MobileNavigation from '@/components/navigation/mobileNavigation';
-import ThemeSwitcher from '@/components/themeSwitcher';
+import MobileNavigation from './MobileNavigation';
+import ThemeSwitcher from './ThemeSwitcher';
 
 const Navbar = () => {
   return (

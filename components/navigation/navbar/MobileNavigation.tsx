@@ -1,10 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import NavLinks from '@/components/navigation/navLinks';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import ROUTES from '@/constants/routes';
+
+import NavLinks from './NavLinks';
 
 const MobileNavigation = () => {
   return (

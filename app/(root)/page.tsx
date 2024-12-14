@@ -1,8 +1,14 @@
-const Home = () => {
+import { auth } from '@/auth';
+
+const Home = async () => {
+  const session = await auth();
+
+  console.log(session);
+
   return (
-    <div className="background-light850_dark100 font-space-grotesk text-3xl font-black text-fuchsia-500">
-      Welcome to the world on Next.js
-    </div>
+    <>
+      <h1 className="h1-bold">Welcome to the world of Next.js</h1>
+    </>
   );
 };
 
