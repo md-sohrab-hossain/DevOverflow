@@ -5,8 +5,9 @@ interface Routes {
   COMMUNITY: string;
   COLLECTION: string;
   JOBS: string;
-  PROFILE: (id: string) => string;
   TAGS: (id: string) => string;
+  PROFILE: (id: string) => string;
+  QUESTION: (id: string) => string;
   ASK_QUESTION: string;
 }
 
@@ -17,8 +18,9 @@ const ROUTES: Routes = {
   COMMUNITY: '/community',
   COLLECTION: '/collection',
   JOBS: '/jobs',
-  PROFILE: (id: string) => `/profile/${id}`,
   TAGS: (id: string) => `/tags/${id}`,
+  PROFILE: (id: string) => `/profile/${id}`,
+  QUESTION: (id: string) => `/question/${id}`,
   ASK_QUESTION: '/ask-question',
 };
 

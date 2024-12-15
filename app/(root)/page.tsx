@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { auth } from '@/auth';
+import QuestionCards from '@/components/cards/QuestionCards';
 import HomeFilter from '@/components/filters/HomeFilter';
 import LocalSearch from '@/components/search/LocalSearch';
 import { Button } from '@/components/ui/button';
@@ -13,9 +14,9 @@ const questions = [
     description: 'I want to learn React, can anyone help me?',
     tags: [
       { _id: '1', name: 'React' },
-      { _id: '2', name: 'React' },
+      { _id: '2', name: 'Javascript' },
     ],
-    author: { _id: '1', name: 'John Doe' },
+    author: { _id: '1', name: 'John Doe', image: 'https://cdn-icons-png.flaticon.com/512/6858/6858504.png' },
     upvotes: 10,
     answers: 5,
     views: 100,
@@ -27,9 +28,9 @@ const questions = [
     description: 'I want to learn JavaScript, can anyone help me?',
     tags: [
       { _id: '1', name: 'JavaScript' },
-      { _id: '2', name: 'JavaScript' },
+      { _id: '2', name: 'React' },
     ],
-    author: { _id: '1', name: 'John Doe' },
+    author: { _id: '1', name: 'John Doe', image: 'https://cdn-icons-png.flaticon.com/512/6858/6858504.png' },
     upvotes: 10,
     answers: 5,
     views: 100,
@@ -75,7 +76,7 @@ const Home = async ({ searchParams }: ISearchParams) => {
 
       <div className="mt-10 flex w-full flex-col gap-6">
         {filteredQuestions.map(question => (
-          <h1 key={question._id}>{question.title}</h1>
+          <QuestionCards key={question._id} questions={question} />
         ))}
       </div>
     </>
