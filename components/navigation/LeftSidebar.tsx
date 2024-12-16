@@ -14,7 +14,7 @@ const LeftSidebar = () => {
         <NavLinks />
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="mt-5 flex flex-col gap-3">
         <Button className="small-medium btn-secondary min-h-[41px] w-full rounded-lg px-4 py-3 shadow-none" asChild>
           <Link href={ROUTES.SIGN_IN}>
             <Image src="/icons/account.svg" alt="Account" width={20} height={20} className="invert-colors lg:hidden" />
@@ -23,7 +23,7 @@ const LeftSidebar = () => {
         </Button>
 
         <Button
-          className="small-medium light-border-2 btn-tertiary text-dark400_light900 min-h-[41px] w-full rounded-lg border px-4 py-3 shadow-none"
+          className="small-medium light-border-2 btn-tertiary text-dark400_light900 min-h-[41px] w-full rounded-lg px-4 py-3 shadow-none"
           asChild
         >
           <Link href={ROUTES.SIGN_UP}>
