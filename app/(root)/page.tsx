@@ -1,11 +1,11 @@
 import Link from 'next/link';
 
-import { auth } from '@/auth';
 import QuestionCards from '@/components/cards/QuestionCards';
 import HomeFilter from '@/components/filters/HomeFilter';
 import LocalSearch from '@/components/search/LocalSearch';
 import { Button } from '@/components/ui/button';
 import ROUTES from '@/constants/routes';
+import dbConnect from '@/lib/mongoose';
 
 const questions = [
   {
@@ -43,8 +43,7 @@ interface ISearchParams {
 }
 
 const Home = async ({ searchParams }: ISearchParams) => {
-  const session = await auth();
-  console.log(session);
+  await dbConnect();
 
   const { query = '', filter = '' } = await searchParams;
 
