@@ -12,10 +12,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!id) throw new NotFoundError('User');
 
   try {
-    await dbConnect();
-
-    const user = await User.findById(id);
-    if (!user) throw new NotFoundError('User');
+    const user = await getUserById(id);
     return NextResponse.json({ success: true, data: user }, { status: 200 });
   } catch (error) {
     return handleError(error, 'api') as APIErrorResponse;
@@ -28,10 +25,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if (!id) throw new NotFoundError('User');
 
   try {
-    await dbConnect();
-
-    const user = await User.findByIdAndDelete(id);
-    if (!user) throw new NotFoundError('User');
+    const user = await deleteUserById(id);
     return NextResponse.json({ success: true, data: user }, { status: 200 });
   } catch (error) {
     return handleError(error, 'api') as APIErrorResponse;
@@ -44,15 +38,32 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!id) throw new NotFoundError('User');
 
   try {
-    await dbConnect();
-
     const body = await request.json();
-    const validateData = UserSchema.partial().parse(body); // Note: partial() in Zod makes all fields in the schema optional
-    const updatedUser = await User.findByIdAndUpdate(id, validateData, { new: true });
-    if (!updatedUser) throw new NotFoundError('User');
-
+    const updatedUser = await updateUser(id, body);
     return NextResponse.json({ success: true, data: updatedUser }, { status: 200 });
   } catch (error) {
     return handleError(error, 'api') as APIErrorResponse;
   }
+}
+
+async function getUserById(id: string) {
+  await dbConnect();
+  const user = await User.findById(id);
+  if (!user) throw new NotFoundError('User');
+  return user;
+}
+
+async function deleteUserById(id: string) {
+  await dbConnect();
+  const user = await User.findByIdAndDelete(id);
+  if (!user) throw new NotFoundError('User');
+  return user;
+}
+
+async function updateUser(id: string, body: unknown) {
+  await dbConnect();
+  const validateData = UserSchema.partial().parse(body); // Partial validation
+  const updatedUser = await User.findByIdAndUpdate(id, validateData, { new: true });
+  if (!updatedUser) throw new NotFoundError('User');
+  return updatedUser;
 }
