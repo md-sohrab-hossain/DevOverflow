@@ -1,3 +1,4 @@
+import ROUTES from '@/constants/routes';
 import { IAccount } from '@/database/account.model';
 import { IUser } from '@/database/user.model';
 
@@ -21,6 +22,14 @@ const makeApiRequest = async <T>(
 };
 
 export const api = {
+  auth: {
+    oAuthSignIn: ({ user, provider, providerAccountId }: SignInWithOAuthParams) =>
+      makeApiRequest(`${API_BASE_URL}/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, 'POST', {
+        user,
+        provider,
+        providerAccountId,
+      }),
+  },
   users: {
     getAll: () => makeApiRequest<IUser[]>(`${API_BASE_URL}/users`),
     getById: (id: string) => makeApiRequest<IUser>(`${API_BASE_URL}/users/${id}`),
