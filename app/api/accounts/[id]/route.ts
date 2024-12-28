@@ -66,6 +66,6 @@ async function updateAccount(id: string, body: unknown) {
   if (!validateData.success) throw new ValidationError(validateData.error.flatten().fieldErrors);
 
   const updatedAccount = await Account.findByIdAndUpdate(id, validateData, { new: true });
-  if (!updatedAccount) throw new NotFoundError('User');
+  if (!updatedAccount) throw new NotFoundError('Account');
   return updatedAccount;
 }

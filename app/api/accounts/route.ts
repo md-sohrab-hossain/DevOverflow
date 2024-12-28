@@ -9,6 +9,7 @@ import { AccountSchema } from '@/lib/validations';
 // GET api/accounts
 export async function GET() {
   try {
+    await dbConnect();
     const accounts = await getAllAccounts();
     return NextResponse.json({ success: true, data: accounts }, { status: 200 });
   } catch (error) {
@@ -19,6 +20,7 @@ export async function GET() {
 // POST api/accounts
 export async function POST(request: Request) {
   try {
+    await dbConnect();
     const body = await request.json();
     const validatedData = AccountSchema.parse(body);
 
@@ -35,7 +37,6 @@ export async function POST(request: Request) {
 }
 
 async function getAllAccounts() {
-  await dbConnect();
   return Account.find({});
 }
 
