@@ -204,7 +204,7 @@ export async function POST(request: Request) {
 
     const operations = async () => {
       const existingUser = await findOrCreateUser(userData, session!);
-      await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
+      // await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
     };
 
     await withTimeout(operations(), 10000); // Set timeout for 10 seconds
