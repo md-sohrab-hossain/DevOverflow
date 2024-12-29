@@ -162,7 +162,7 @@ interface IValidatedData {
 }
 
 // Retry logic for database connection
-const connectWithRetry = async (retries: number = 5, delay: number = 3000): Promise<void> => {
+const connectWithRetry = async (retries: number = 6, delay: number = 10000): Promise<void> => {
   let attempts = 0;
   while (attempts < retries) {
     try {
