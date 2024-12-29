@@ -140,7 +140,7 @@ import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 import slugify from 'slugify';
 
-// import Account from '@/database/account.model';
+import Account from '@/database/account.model';
 import User, { IUser } from '@/database/user.model';
 import handleError from '@/lib/handlers/error';
 import { ValidationError } from '@/lib/http-errors';
@@ -203,11 +203,11 @@ export async function POST(request: Request) {
     session.startTransaction();
 
     const operations = async () => {
-      await findOrCreateUser(userData, session!);
-      // await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
+      const existingUser = await findOrCreateUser(userData, session!);
+      await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
     };
 
-    await withTimeout(operations(), 10000); // Set timeout for 10 seconds
+    await withTimeout(operations(), 60000); // Set timeout for 60 seconds
 
     await session.commitTransaction();
     return NextResponse.json({ success: true });
@@ -256,33 +256,33 @@ const updateUserIfNecessary = async (existingUser: IUser, userData: IUserData, s
   }
 };
 
-// const findOrCreateAccount = async (
-//   userId: mongoose.Types.ObjectId,
-//   provider: string,
-//   providerAccountId: string,
-//   userData: IUserData,
-//   session: mongoose.ClientSession
-// ) => {
-//   const { name, image } = userData;
+const findOrCreateAccount = async (
+  userId: mongoose.Types.ObjectId,
+  provider: string,
+  providerAccountId: string,
+  userData: IUserData,
+  session: mongoose.ClientSession
+) => {
+  const { name, image } = userData;
 
-//   const existingAccount = await Account.findOne({ userId, provider, providerAccountId }).session(session);
+  const existingAccount = await Account.findOne({ userId, provider, providerAccountId }).session(session);
 
-//   if (existingAccount) {
-//     return existingAccount;
-//   }
+  if (existingAccount) {
+    return existingAccount;
+  }
 
-//   const newAccount = await Account.create(
-//     [
-//       {
-//         userId,
-//         name,
-//         image,
-//         provider,
-//         providerAccountId,
-//       },
-//     ],
-//     { session }
-//   );
+  const newAccount = await Account.create(
+    [
+      {
+        userId,
+        name,
+        image,
+        provider,
+        providerAccountId,
+      },
+    ],
+    { session }
+  );
 
-//   return newAccount;
-// };
+  return newAccount;
+};
