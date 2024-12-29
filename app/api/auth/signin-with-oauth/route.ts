@@ -33,22 +33,17 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
 };
 
 export async function POST(request: Request) {
-  let session: mongoose.ClientSession | null = null;
+  const { provider, providerAccountId, user } = await request.json();
+
+  await dbConnect();
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    // Set connection timeout
-    const connectionPromise = dbConnect();
-    await withTimeout(connectionPromise, 5000); // 5 second timeout for DB connection
-
-    const { provider, providerAccountId, user } = await request.json();
-
     // Validate data before starting transaction
     const validatedData = validateRequestData({ provider, providerAccountId, user });
     const { user: userData } = validatedData;
-
-    // Start transaction with timeout
-    session = await mongoose.startSession();
-    session.startTransaction();
 
     // Execute database operations with timeout
     const operations = async () => {
@@ -56,7 +51,7 @@ export async function POST(request: Request) {
       await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
     };
 
-    await withTimeout(operations(), 10000); // 10 second timeout for operation
+    await withTimeout(operations(), 100000); // 10 second timeout for operation
     await session.commitTransaction(); // Finalizes and saves all changes made within the transaction.
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
