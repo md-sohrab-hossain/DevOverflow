@@ -176,7 +176,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Retry mechanism
       let attempt = 0;
       let success = false;
-      const maxAttempts = 3;
+      const maxAttempts = 5;
       const retryDelay = 5000; // 5 seconds
 
       while (attempt < maxAttempts) {
