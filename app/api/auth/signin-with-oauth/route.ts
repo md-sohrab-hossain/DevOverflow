@@ -166,12 +166,12 @@ const connectWithRetry = async (retries: number = 5, delay: number = 3000): Prom
   let attempts = 0;
   while (attempts < retries) {
     try {
-      await dbConnect(); // Assuming dbConnect is the function to connect to DB
+      await dbConnect();
       logger.info('Database connection successful');
       return;
     } catch (error) {
       attempts++;
-      logger.error({ er: error }, `Database connection failed. Attempt ${attempts} of ${retries}`);
+      logger.error({ err: error }, `Database connection failed. Attempt ${attempts} of ${retries}`);
       if (attempts >= retries) {
         throw new Error('Database connection failed after multiple attempts');
       }
@@ -180,36 +180,40 @@ const connectWithRetry = async (retries: number = 5, delay: number = 3000): Prom
   }
 };
 
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+  return Promise.race([
+    promise,
+    // eslint-disable-next-line promise/param-names
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)),
+  ]);
+};
+
 export async function POST(request: Request) {
   let session: mongoose.ClientSession | null = null;
 
   try {
-    // Retry database connection
     await connectWithRetry();
 
     const { provider, providerAccountId, user } = await request.json();
 
-    // Validate incoming data
     const validatedData = validateRequestData({ provider, providerAccountId, user });
     const { user: userData } = validatedData;
 
-    // Start session for transaction
     session = await mongoose.startSession();
     session.startTransaction();
 
-    // Try to execute DB operations within the transaction
     const operations = async () => {
       const existingUser = await findOrCreateUser(userData, session!);
       await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
     };
 
-    await operations(); // No timeout; rely on transaction handling
+    await withTimeout(operations(), 10000); // Set timeout for 10 seconds
 
-    await session.commitTransaction(); // Commit changes
+    await session.commitTransaction();
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     logger.error({ err: error }, 'OAuth Sign-in Error');
-    await session?.abortTransaction(); // Reverts any changes if something goes wrong
+    await session?.abortTransaction();
     return handleError(error, 'api') as APIErrorResponse;
   } finally {
     session?.endSession();
@@ -228,7 +232,6 @@ const validateRequestData = (data: IValidatedData): IValidatedData => {
 
 const findOrCreateUser = async (userData: IUserData, session: mongoose.ClientSession) => {
   const { name, username, email, image } = userData;
-
   const normalizedUsername = slugify(username, { lower: true, strict: true, trim: true });
 
   let existingUser = await User.findOne({ email }).session(session);
