@@ -162,16 +162,16 @@ interface IValidatedData {
 }
 
 // Retry logic for database connection
-const connectWithRetry = async (retries: number = 6, delay: number = 10000): Promise<void> => {
+const connectWithRetry = async (retries: number = 5, delay: number = 3000): Promise<void> => {
   let attempts = 0;
   while (attempts < retries) {
     try {
       await dbConnect();
-      logger.info('Database connection successful');
+      console.log('Database connection successful');
       return;
     } catch (error) {
       attempts++;
-      logger.error({ err: error }, `Database connection failed. Attempt ${attempts} of ${retries}`);
+      console.log({ err: error }, `Database connection failed. Attempt ${attempts} of ${retries}`);
       if (attempts >= retries) {
         throw new Error('Database connection failed after multiple attempts');
       }
@@ -192,67 +192,87 @@ export async function POST(request: Request) {
   let session: mongoose.ClientSession | null = null;
 
   try {
+    console.log('Starting POST request handler');
     await connectWithRetry();
 
     const { provider, providerAccountId, user } = await request.json();
+    console.log('Received request data', { provider, providerAccountId, user });
 
     const validatedData = validateRequestData({ provider, providerAccountId, user });
+    console.log('Validated request data', validatedData);
     const { user: userData } = validatedData;
 
     session = await mongoose.startSession();
     session.startTransaction();
+    console.log('Started MongoDB session and transaction');
 
     const operations = async () => {
       const existingUser = await findOrCreateUser(userData, session!);
+      console.log('Found or created user', existingUser);
       await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
+      console.log('Found or created account');
     };
 
-    await withTimeout(operations(), 60000); // Set timeout for 60 seconds
+    await withTimeout(operations(), 10000); // Set timeout for 10 seconds
 
     await session.commitTransaction();
+    console.log('Committed MongoDB transaction');
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     logger.error({ err: error }, 'OAuth Sign-in Error');
     await session?.abortTransaction();
+    console.log('Aborted MongoDB transaction');
     return handleError(error, 'api') as APIErrorResponse;
   } finally {
     session?.endSession();
+    console.log('Ended MongoDB session');
   }
 }
 
 const validateRequestData = (data: IValidatedData): IValidatedData => {
+  console.log('Validating request data', data);
   const validatedData = SignInWithOAuthSchema.safeParse(data);
 
   if (!validatedData.success) {
+    logger.error('Validation error', validatedData.error.flatten().fieldErrors);
     throw new ValidationError(validatedData.error.flatten().fieldErrors);
   }
 
+  console.log('Validation successful', validatedData.data);
   return validatedData.data;
 };
 
 const findOrCreateUser = async (userData: IUserData, session: mongoose.ClientSession) => {
+  console.log('Finding or creating user', userData);
   const { name, username, email, image } = userData;
   const normalizedUsername = slugify(username, { lower: true, strict: true, trim: true });
 
   let existingUser = await User.findOne({ email }).session(session);
 
   if (!existingUser) {
+    console.log('User not found, creating new user');
     [existingUser] = await User.create([{ name, username: normalizedUsername, email, image }], { session });
   } else {
+    console.log('User found, updating if necessary');
     await updateUserIfNecessary(existingUser, userData, session);
   }
 
+  console.log('User found or created', existingUser);
   return existingUser;
 };
 
 const updateUserIfNecessary = async (existingUser: IUser, userData: IUserData, session: mongoose.ClientSession) => {
+  console.log('Updating user if necessary', { existingUser, userData });
   const { name, image } = userData;
   const updatedData: { name?: string; image?: string } = {};
 
   if (existingUser.name !== name) updatedData.name = name;
   if (existingUser.image !== image) updatedData.image = image;
   if (Object.keys(updatedData).length > 0) {
+    console.log('Updating user', updatedData);
     await User.updateOne({ _id: existingUser._id }, { $set: updatedData }).session(session);
+  } else {
+    console.log('No user updates necessary');
   }
 };
 
@@ -263,14 +283,17 @@ const findOrCreateAccount = async (
   userData: IUserData,
   session: mongoose.ClientSession
 ) => {
+  console.log('Finding or creating account', { userId, provider, providerAccountId, userData });
   const { name, image } = userData;
 
   const existingAccount = await Account.findOne({ userId, provider, providerAccountId }).session(session);
 
   if (existingAccount) {
+    console.log('Account found', existingAccount);
     return existingAccount;
   }
 
+  console.log('Account not found, creating new account');
   const newAccount = await Account.create(
     [
       {
@@ -284,5 +307,6 @@ const findOrCreateAccount = async (
     { session }
   );
 
+  console.log('New account created', newAccount);
   return newAccount;
 };
