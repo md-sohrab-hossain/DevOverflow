@@ -33,17 +33,22 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
 };
 
 export async function POST(request: Request) {
-  const { provider, providerAccountId, user } = await request.json();
-
-  await dbConnect();
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  let session: mongoose.ClientSession | null = null;
 
   try {
+    // Set connection timeout
+    const connectionPromise = dbConnect();
+    await withTimeout(connectionPromise, 200000); // 20 second timeout for DB connection
+
+    const { provider, providerAccountId, user } = await request.json();
+
     // Validate data before starting transaction
     const validatedData = validateRequestData({ provider, providerAccountId, user });
     const { user: userData } = validatedData;
+
+    // Start transaction with timeout
+    session = await mongoose.startSession();
+    session.startTransaction();
 
     // Execute database operations with timeout
     const operations = async () => {
