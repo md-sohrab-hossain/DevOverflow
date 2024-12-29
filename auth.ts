@@ -99,7 +99,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.GOOGLE_SECRET!,
     }),
   ],
-  debug: true,
   callbacks: {
     /**
      * Called whenever a session is checked
