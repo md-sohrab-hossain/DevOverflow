@@ -89,7 +89,14 @@ const handleAccountLookup = async (
 };
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [GitHub, Google],
+  providers: [
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_ID!,
+      clientSecret: process.env.AUTH_GITHUB_SECRET!,
+    }),
+    Google,
+  ],
+  debug: true,
   callbacks: {
     /**
      * Called whenever a session is checked
@@ -123,6 +130,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      * Handles the OAuth sign-in flow and account creation/linking
      */
     async signIn({ user, profile, account }) {
+      console.log('Sign-in attempt:', {
+        user: { name: user.name, email: user.email },
+        account: { provider: account?.provider, type: account?.type },
+        profile: { login: (profile as GoogleProfile | GithubProfile)?.login },
+      });
+
       // Allow credential-based sign-in
       if (account?.type === 'credentials') return true;
       if (!account || !user) return false;
