@@ -10,6 +10,7 @@ const makeApiRequest = async <T>(
   endpoint: string,
   method: string = 'GET',
   body: unknown = null,
+  timeout: number = 5000,
   headers: HeadersInit = {}
 ): Promise<ActionResponse<T>> => {
   const options: RequestInit = { method, headers: { ...headers } };
@@ -18,17 +19,22 @@ const makeApiRequest = async <T>(
     options.body = JSON.stringify(body);
   }
 
-  return fetchHandler(endpoint, options);
+  return fetchHandler(endpoint, { ...options, timeout });
 };
 
 export const api = {
   auth: {
-    oAuthSignIn: ({ user, provider, providerAccountId }: SignInWithOAuthParams) =>
-      makeApiRequest(`${API_BASE_URL}/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, 'POST', {
-        user,
-        provider,
-        providerAccountId,
-      }),
+    oAuthSignIn: ({ user, provider, providerAccountId }: SignInWithOAuthParams, timeout: number) =>
+      makeApiRequest(
+        `${API_BASE_URL}/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`,
+        'POST',
+        {
+          user,
+          provider,
+          providerAccountId,
+        },
+        timeout
+      ),
   },
   users: {
     getAll: () => makeApiRequest<IUser[]>(`${API_BASE_URL}/users`),
