@@ -10,9 +10,8 @@ import Google from 'next-auth/providers/google';
 import { IAccount } from '@/database/account.model';
 import { api } from '@/lib/api';
 
+const WAIT_TIMEOUT = 2000;
 type Provider = 'github' | 'google';
-
-const WAIT_TIME_OUT = 3000;
 
 interface UserInfo {
   name: string;
@@ -133,6 +132,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      * Called when a user signs in
      * Handles the OAuth sign-in flow and account creation/linking
      */
+    // async signIn({ user, profile, account }) {
+    //   console.log('Sign-in attempt:', {
+    //     user: { name: user.name, email: user.email },
+    //     account: { provider: account?.provider, type: account?.type },
+    //     profile: { login: (profile as GoogleProfile | GithubProfile)?.login },
+    //   });
+
+    //   // Allow credential-based sign-in
+    //   if (account?.type === 'credentials') return true;
+    //   if (!account || !user) return false;
+
+    //   // Create standardized user info
+    //   const userInfo = createUserInfo(user, account, profile as GithubProfile | GoogleProfile);
+
+    //   // Attempt to sign in or create account
+    //   const { success } = (await api.auth.oAuthSignIn(
+    //     {
+    //       user: userInfo,
+    //       provider: account.provider as Provider,
+    //       providerAccountId: account.providerAccountId,
+    //     },
+    //     30000
+    //   )) as ActionResponse;
+
+    //   return success;
+    // },
+
     async signIn({ user, profile, account }) {
       console.log('Sign-in attempt:', {
         user: { name: user.name, email: user.email },
@@ -147,15 +173,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Create standardized user info
       const userInfo = createUserInfo(user, account, profile as GithubProfile | GoogleProfile);
 
-      // Attempt to sign in or create account
-      const { success } = (await api.auth.oAuthSignIn(
-        {
-          user: userInfo,
-          provider: account.provider as Provider,
-          providerAccountId: account.providerAccountId,
-        },
-        WAIT_TIME_OUT
-      )) as ActionResponse;
+      // Retry mechanism
+      let attempt = 0;
+      let success = false;
+      const maxAttempts = 3;
+      const retryDelay = 5000; // 5 seconds
+
+      while (attempt < maxAttempts) {
+        try {
+          // Attempt to sign in or create account
+          const response = (await api.auth.oAuthSignIn(
+            {
+              user: userInfo,
+              provider: account.provider as Provider,
+              providerAccountId: account.providerAccountId,
+            },
+            WAIT_TIMEOUT
+          )) as ActionResponse;
+
+          success = response.success;
+          if (success) break;
+        } catch (error) {
+          console.log(`Sign-in attempt ${attempt + 1} failed:`, error);
+          attempt++;
+          if (attempt < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay)); // Wait before retrying
+          }
+        }
+      }
 
       return success;
     },
