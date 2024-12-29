@@ -6,6 +6,7 @@ import Account from '@/database/account.model';
 import User, { IUser } from '@/database/user.model';
 import handleError from '@/lib/handlers/error';
 import { ValidationError } from '@/lib/http-errors';
+import logger from '@/lib/logger';
 import dbConnect from '@/lib/mongoose';
 import { SignInWithOAuthSchema } from '@/lib/validations';
 
@@ -22,28 +23,48 @@ interface IValidatedData {
   user: IUserData;
 }
 
+// Add timeout wrapper
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+  return Promise.race([
+    promise,
+    // eslint-disable-next-line promise/param-names
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)),
+  ]);
+};
+
 export async function POST(request: Request) {
-  const { provider, providerAccountId, user } = await request.json();
-
-  await dbConnect();
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  let session: mongoose.ClientSession | null = null;
 
   try {
+    // Set connection timeout
+    const connectionPromise = dbConnect();
+    await withTimeout(connectionPromise, 5000); // 5 second timeout for DB connection
+
+    const { provider, providerAccountId, user } = await request.json();
+
+    // Validate data before starting transaction
     const validatedData = validateRequestData({ provider, providerAccountId, user });
     const { user: userData } = validatedData;
 
-    const existingUser = await findOrCreateUser(userData, session);
-    await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session);
+    // Start transaction with timeout
+    session = await mongoose.startSession();
+    session.startTransaction();
 
+    // Execute database operations with timeout
+    const operations = async () => {
+      const existingUser = await findOrCreateUser(userData, session!);
+      await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session!);
+    };
+
+    await withTimeout(operations(), 10000); // 10 second timeout for operation
     await session.commitTransaction(); // Finalizes and saves all changes made within the transaction.
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    await session.abortTransaction(); // Reverts any changes if something goes wrong, maintaining data consistency.
+    logger.error({ err: error }, 'OAuth Sign-in Error');
+    await session?.abortTransaction(); // Reverts any changes if something goes wrong, maintaining data consistency.
     return handleError(error, 'api') as APIErrorResponse;
   } finally {
-    session.endSession();
+    session?.endSession();
   }
 }
 
