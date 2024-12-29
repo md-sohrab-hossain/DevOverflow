@@ -47,7 +47,7 @@ async function handleFetchError<T>(error: unknown, url: string): Promise<ActionR
 }
 
 export async function fetchHandler<T>(url: string, options: FetchOptions = {}): Promise<ActionResponse<T>> {
-  const { timeout = 20000, headers: customHeaders = {}, ...restOptions } = options;
+  const { timeout = 30000, headers: customHeaders = {}, ...restOptions } = options;
 
   const { controller, timeoutId } = createAbortController(timeout);
   const headers = buildHeaders(customHeaders);
