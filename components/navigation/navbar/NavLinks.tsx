@@ -4,29 +4,31 @@ import { usePathname } from 'next/navigation';
 import React from 'react';
 
 import { sidebarLinks } from '@/constants';
+import { resolveRoute, isRouteActive } from '@/lib/utils';
 
 import NavLinkItem from './NavLinkItem';
 
-const NavLinks = ({ isMobileNav = false }: { isMobileNav?: boolean }) => {
+interface NavLinksProps {
+  isMobileNav?: boolean;
+  userId?: string | undefined;
+}
+
+const NavLinks = ({ isMobileNav = false, userId }: NavLinksProps) => {
   const pathname = usePathname();
-  const userId = '1'; // This could be fetched dynamically
 
   return (
     <>
-      {sidebarLinks.map(item => {
-        // Resolve dynamic routes
-        let resolvedRoute: string | ((id: string) => string) = item.route;
-        if (typeof resolvedRoute === 'function') {
-          resolvedRoute = resolvedRoute(userId.toString());
-        }
+      {sidebarLinks.map((item, index) => {
+        const route = resolveRoute(item.route, userId);
+        if (!route) return null;
 
-        const isActive = (pathname.includes(resolvedRoute) && resolvedRoute.length > 1) || pathname === resolvedRoute;
+        const isActive = isRouteActive(pathname, route);
 
         return (
           <NavLinkItem
+            key={`${route}-${index}`}
             id={userId}
-            key={resolvedRoute}
-            item={{ ...item, route: resolvedRoute }}
+            item={item}
             isActive={isActive}
             isMobileNav={isMobileNav}
           />

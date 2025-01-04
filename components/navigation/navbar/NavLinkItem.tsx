@@ -5,30 +5,25 @@ import Link from 'next/link';
 import React from 'react';
 
 import { SheetClose } from '@/components/ui/sheet';
-import { sidebarLinks } from '@/constants';
-import { cn } from '@/lib/utils';
+import { NavLink } from '@/constants';
+import { cn, resolveRoute } from '@/lib/utils';
 
-const NavLinkItem = ({
-  id,
-  item,
-  isActive,
-  isMobileNav,
-}: {
-  id: string;
+interface NavLinkItemProps {
+  id: string | undefined;
   isActive: boolean;
   isMobileNav: boolean;
-  item: (typeof sidebarLinks)[0];
-}) => {
-  const resolvedRoute: string | ((id: string) => string) =
-    typeof item.route === 'function' ? item.route(id) : item.route;
+  item: NavLink;
+}
 
-  const linkComponent = (
+const NavLinkItem = ({ id, item, isActive, isMobileNav }: NavLinkItemProps) => {
+  const href = resolveRoute(item.route, id);
+
+  const LinkContent = () => (
     <Link
-      href={resolvedRoute}
-      key={item.label}
+      href={href}
       className={cn(
-        isActive ? 'primary-gradient rounded-lg text-light-900' : 'text-dark300_light900',
-        'flex items-center justify-start gap-4 bg-transparent p-4'
+        'flex items-center justify-start gap-4 bg-transparent p-4',
+        isActive ? 'primary-gradient rounded-lg text-light-900' : 'text-dark300_light900'
       )}
     >
       <Image src={item.imgURL} alt={item.label} width={20} height={20} className={cn({ 'invert-colors': !isActive })} />
@@ -37,11 +32,11 @@ const NavLinkItem = ({
   );
 
   return isMobileNav ? (
-    <SheetClose asChild key={resolvedRoute}>
-      {linkComponent}
+    <SheetClose asChild>
+      <LinkContent />
     </SheetClose>
   ) : (
-    <React.Fragment key={resolvedRoute}>{linkComponent}</React.Fragment>
+    <LinkContent />
   );
 };
 

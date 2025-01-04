@@ -1,6 +1,12 @@
 import ROUTES from './routes';
 
-export const sidebarLinks = [
+export interface NavLink {
+  imgURL: string;
+  route: string | ((id: string) => string);
+  label: string;
+}
+
+export const sidebarLinks: NavLink[] = [
   {
     imgURL: '/icons/home.svg',
     route: ROUTES.HOME,

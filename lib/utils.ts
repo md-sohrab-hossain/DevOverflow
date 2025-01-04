@@ -35,3 +35,15 @@ export const getTimeStamp = (date: Date) => {
   }
   return 'just now';
 };
+
+export const resolveRoute = (route: string | ((id: string) => string), userId?: string): string => {
+  if (typeof route === 'function') {
+    return userId ? route(userId) : '';
+  }
+
+  return route;
+};
+
+export const isRouteActive = (pathname: string, route: string): boolean => {
+  return (pathname.includes(route) && route.length > 1) || pathname === route;
+};
