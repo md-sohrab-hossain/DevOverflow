@@ -6,55 +6,49 @@ import { fetchHandler } from './handlers/fetch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
 
-const makeApiRequest = async <T>(
-  endpoint: string,
-  method: string = 'GET',
-  body: unknown = null,
-  timeout: number = 5000,
-  headers: HeadersInit = {}
-): Promise<ActionResponse<T>> => {
-  const options: RequestInit = { method, headers: { ...headers } };
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-  if (body) {
-    options.body = JSON.stringify(body);
+interface RequestOptions {
+  method?: HttpMethod;
+  body?: unknown;
+  timeout?: number;
+  headers?: HeadersInit;
+}
+
+const makeApiRequest = async <T>(endpoint: string, options: RequestOptions = {}): Promise<ActionResponse<T>> => {
+  const { method = 'GET', body = null, timeout = 5000, headers = {} } = options;
+  const requestOptions: RequestInit = {
+    method,
+    headers: { ...headers },
+  };
+
+  if (body && method !== 'GET') {
+    requestOptions.body = JSON.stringify(body);
   }
 
-  return fetchHandler(endpoint, { ...options, timeout });
+  return fetchHandler(`${API_BASE_URL}${endpoint}`, { ...requestOptions, timeout });
 };
+
+const createApiMethods = <T>(basePath: string) => ({
+  getAll: () => makeApiRequest<T[]>(basePath),
+  getById: (id: string) => makeApiRequest<T>(`${basePath}/${id}`),
+  create: (data: Partial<T>) => makeApiRequest<T>(basePath, { method: 'POST', body: data }),
+  update: (id: string, data: Partial<T>) => makeApiRequest<T>(`${basePath}/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => makeApiRequest<T>(`${basePath}/${id}`, { method: 'DELETE' }),
+});
 
 export const api = {
   auth: {
-    oAuthSignIn: ({ user, provider, providerAccountId }: SignInWithOAuthParams, timeout: number) =>
-      makeApiRequest(
-        `${API_BASE_URL}/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`,
-        'POST',
-        {
-          user,
-          provider,
-          providerAccountId,
-        },
-        timeout
-      ),
+    oAuthSignIn: (params: SignInWithOAuthParams, timeout: number) =>
+      makeApiRequest(`/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, { method: 'POST', body: params, timeout }),
   },
   users: {
-    getAll: () => makeApiRequest<IUser[]>(`${API_BASE_URL}/users`),
-    getById: (id: string) => makeApiRequest<IUser>(`${API_BASE_URL}/users/${id}`),
-    getByEmail: (email: string) => makeApiRequest<IUser>(`${API_BASE_URL}/users/email`, 'POST', { email }),
-    create: (userData: Partial<IUser>) => makeApiRequest<IUser>(`${API_BASE_URL}/users`, 'POST', userData),
-    update: (id: string, userData: Partial<IUser>) =>
-      makeApiRequest<IUser>(`${API_BASE_URL}/users/${id}`, 'PUT', userData),
-    delete: (id: string) => makeApiRequest<IUser>(`${API_BASE_URL}/users/${id}`, 'DELETE'),
+    ...createApiMethods<IUser>('/users'),
+    getByEmail: (email: string) => makeApiRequest<IUser>('/users/email', { method: 'POST', body: { email } }),
   },
-
   accounts: {
-    getAll: () => makeApiRequest<IAccount[]>(`${API_BASE_URL}/accounts`),
-    getById: (id: string) => makeApiRequest<IAccount>(`${API_BASE_URL}/accounts/${id}`),
+    ...createApiMethods<IAccount>('/accounts'),
     getByProvider: (providerAccountId: string) =>
-      makeApiRequest<IAccount>(`${API_BASE_URL}/accounts/provider`, 'POST', { providerAccountId }),
-    create: (accountData: Partial<IAccount>) =>
-      makeApiRequest<IAccount>(`${API_BASE_URL}/accounts`, 'POST', accountData),
-    update: (id: string, accountData: Partial<IAccount>) =>
-      makeApiRequest<IAccount>(`${API_BASE_URL}/accounts/${id}`, 'PUT', accountData),
-    delete: (id: string) => makeApiRequest<IAccount>(`${API_BASE_URL}/accounts/${id}`, 'DELETE'),
+      makeApiRequest<IAccount>('/accounts/provider', { method: 'POST', body: { providerAccountId } }),
   },
 };

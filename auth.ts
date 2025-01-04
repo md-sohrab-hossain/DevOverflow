@@ -1,14 +1,14 @@
-/**
- * NextAuth configuration file for handling OAuth authentication with GitHub and Google
- * providers. Includes custom callbacks for session handling, JWT processing, and sign-in flow.
- */
-
+import bcrypt from 'bcryptjs';
 import NextAuth, { Session, Account, Profile, DefaultSession, User } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
 
 import { IAccount } from '@/database/account.model';
 import { api } from '@/lib/api';
+
+import { IUser } from './database/user.model';
+import { SignInSchema } from './lib/validations';
 
 const WAIT_TIMEOUT = 2000;
 type Provider = 'github' | 'google';
@@ -38,10 +38,6 @@ interface ExtendedSession extends Session {
 
 /**
  * Determines the username based on the provider and profile information
- * @param provider - The OAuth provider ('github' or 'google')
- * @param profile - The user's profile from the OAuth provider
- * @param userName - Fallback username from the base user object
- * @returns Formatted username string
  */
 const getUsernameFromProfile = (
   provider: string,
@@ -55,11 +51,7 @@ const getUsernameFromProfile = (
 };
 
 /**
- * Creates a standardized us er info object from various authentication sources
- * @param user - Base user object from OAuth provider
- * @param account - Account information from the provider
- * @param profile - Extended profile information (especially important for GitHub)
- * @returns Standardized user information object
+ * Creates a standardized user info object from various authentication sources
  */
 const createUserInfo = (
   user: User,
@@ -74,9 +66,6 @@ const createUserInfo = (
 
 /**
  * Looks up existing account information in the database
- * @param account - Account information including type and provider ID
- * @param token - JWT token containing email information
- * @returns Promise resolving to user ID if found
  */
 const handleAccountLookup = async (
   account: Pick<Account, 'type' | 'providerAccountId'>,
@@ -89,7 +78,71 @@ const handleAccountLookup = async (
   return existingAccount.userId?.toString();
 };
 
+/**
+ * Authorizes a user with credentials
+ */
+const authorizeUser = async (credentials: Partial<Record<string, unknown>>) => {
+  const validatedFields = SignInSchema.safeParse(credentials);
+  if (!validatedFields.success) {
+    return null;
+  }
+
+  const { email, password } = validatedFields.data;
+  const { data: existingAccount } = (await api.accounts.getByProvider(email)) as ActionResponse<IAccount>;
+  if (!existingAccount) {
+    return null;
+  }
+
+  const { data: existingUser } = (await api.users.getById(existingAccount.userId.toString())) as ActionResponse<IUser>;
+  if (!existingUser) {
+    return null;
+  }
+
+  const isValidPassword = await bcrypt.compare(password, existingAccount.password!);
+  if (!isValidPassword) {
+    return null;
+  }
+
+  return { id: existingUser.id, name: existingUser.name, email: existingUser.email, image: existingUser.image };
+};
+
+/**
+ * Retry mechanism for OAuth sign-in
+ */
+const retryOAuthSignIn = async (userInfo: UserInfo, provider: Provider, providerAccountId: string) => {
+  let attempt = 0;
+  let success = false;
+  const maxAttempts = 5;
+  const retryDelay = 5000; // 5 seconds
+
+  while (attempt < maxAttempts) {
+    try {
+      // Attempt to sign in or create account
+      const response = (await api.auth.oAuthSignIn(
+        {
+          user: userInfo,
+          provider,
+          providerAccountId,
+        },
+        WAIT_TIMEOUT
+      )) as ActionResponse;
+
+      success = response.success;
+      if (success) break;
+    } catch (error) {
+      console.log(`Sign-in attempt ${attempt + 1} failed:`, error);
+      attempt++;
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay)); // Wait before retrying
+      }
+    }
+  }
+
+  return success;
+};
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // https://next-auth.js.org/configuration/providers/oauth
   providers: [
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID!,
@@ -99,7 +152,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientId: process.env.GOOGLE_ID!,
       clientSecret: process.env.GOOGLE_SECRET!,
     }),
+    // https://next-auth.js.org/configuration/providers/credentials
+    Credentials({
+      async authorize(credentials) {
+        return authorizeUser(credentials);
+      },
+    }),
   ],
+
+  // https://next-auth.js.org/configuration/callbacks
   callbacks: {
     /**
      * Called whenever a session is checked
@@ -132,33 +193,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      * Called when a user signs in
      * Handles the OAuth sign-in flow and account creation/linking
      */
-    // async signIn({ user, profile, account }) {
-    //   console.log('Sign-in attempt:', {
-    //     user: { name: user.name, email: user.email },
-    //     account: { provider: account?.provider, type: account?.type },
-    //     profile: { login: (profile as GoogleProfile | GithubProfile)?.login },
-    //   });
-
-    //   // Allow credential-based sign-in
-    //   if (account?.type === 'credentials') return true;
-    //   if (!account || !user) return false;
-
-    //   // Create standardized user info
-    //   const userInfo = createUserInfo(user, account, profile as GithubProfile | GoogleProfile);
-
-    //   // Attempt to sign in or create account
-    //   const { success } = (await api.auth.oAuthSignIn(
-    //     {
-    //       user: userInfo,
-    //       provider: account.provider as Provider,
-    //       providerAccountId: account.providerAccountId,
-    //     },
-    //     30000
-    //   )) as ActionResponse;
-
-    //   return success;
-    // },
-
     async signIn({ user, profile, account }) {
       console.log('Sign-in attempt:', {
         user: { name: user.name, email: user.email },
@@ -173,36 +207,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Create standardized user info
       const userInfo = createUserInfo(user, account, profile as GithubProfile | GoogleProfile);
 
-      // Retry mechanism
-      let attempt = 0;
-      let success = false;
-      const maxAttempts = 5;
-      const retryDelay = 5000; // 5 seconds
-
-      while (attempt < maxAttempts) {
-        try {
-          // Attempt to sign in or create account
-          const response = (await api.auth.oAuthSignIn(
-            {
-              user: userInfo,
-              provider: account.provider as Provider,
-              providerAccountId: account.providerAccountId,
-            },
-            WAIT_TIMEOUT
-          )) as ActionResponse;
-
-          success = response.success;
-          if (success) break;
-        } catch (error) {
-          console.log(`Sign-in attempt ${attempt + 1} failed:`, error);
-          attempt++;
-          if (attempt < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, retryDelay)); // Wait before retrying
-          }
-        }
-      }
-
-      return success;
+      // Retry mechanism for OAuth sign-in
+      return retryOAuthSignIn(userInfo, account.provider as Provider, account.providerAccountId);
     },
   },
 });
