@@ -11,6 +11,7 @@ import User from '@/database/user.model';
 import action from '../handlers/action';
 import handleError from '../handlers/error';
 import { NotFoundError } from '../http-errors';
+import logger from '../logger';
 import { SignInSchema, SignUpSchema } from '../validations';
 
 const SALT_ROUNDS = 12;
@@ -61,20 +62,25 @@ async function createUserWithAccount(
   hashedPassword: string,
   session: mongoose.ClientSession
 ): Promise<void> {
-  const [newUser] = await User.create([userData], { session });
+  try {
+    const [newUser] = await User.create([userData], { session });
 
-  await Account.create(
-    [
-      {
-        userId: newUser._id,
-        name: userData.name,
-        provider: 'credentials',
-        providerAccountId: userData.email,
-        password: hashedPassword,
-      },
-    ],
-    { session }
-  );
+    await Account.create(
+      [
+        {
+          userId: newUser._id,
+          name: userData.name,
+          provider: 'credentials',
+          providerAccountId: userData.email,
+          password: hashedPassword,
+        },
+      ],
+      { session }
+    );
+  } catch (error) {
+    logger.error(`Error creating user account ${error}`);
+    throw error;
+  }
 }
 
 async function validateUniqueCredentials(
