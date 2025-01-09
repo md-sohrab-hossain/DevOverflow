@@ -10,7 +10,6 @@ import { api } from '@/lib/api';
 import { IUser } from './database/user.model';
 import { SignInSchema } from './lib/validations';
 
-const WAIT_TIMEOUT = 2000;
 type Provider = 'github' | 'google';
 
 interface UserInfo {
@@ -82,63 +81,43 @@ const handleAccountLookup = async (
  * Authorizes a user with credentials
  */
 const authorizeUser = async (credentials: Partial<Record<string, unknown>>) => {
-  const validatedFields = SignInSchema.safeParse(credentials);
-  if (!validatedFields.success) {
+  try {
+    const validatedFields = SignInSchema.safeParse(credentials);
+    if (!validatedFields.success) {
+      throw new Error('Invalid credentials format');
+    }
+
+    const { email, password } = validatedFields.data;
+    const account = (await api.accounts.getByProvider(email)) as ActionResponse<IAccount>;
+    const user = account?.data && ((await api.users.getById(account.data.userId.toString())) as ActionResponse<IUser>);
+
+    if (!account?.data || !user?.data || !(await bcrypt.compare(password, account.data.password!))) {
+      throw new Error('Invalid credentials');
+    }
+
+    return {
+      id: user.data.id,
+      name: user.data.name,
+      email: user.data.email,
+      image: user.data.image,
+    };
+  } catch (error) {
+    console.error('Auth error:', error);
     return null;
   }
-
-  const { email, password } = validatedFields.data;
-  const { data: existingAccount } = (await api.accounts.getByProvider(email)) as ActionResponse<IAccount>;
-  if (!existingAccount) {
-    return null;
-  }
-
-  const { data: existingUser } = (await api.users.getById(existingAccount.userId.toString())) as ActionResponse<IUser>;
-  if (!existingUser) {
-    return null;
-  }
-
-  const isValidPassword = await bcrypt.compare(password, existingAccount.password!);
-  if (!isValidPassword) {
-    return null;
-  }
-
-  return { id: existingUser.id, name: existingUser.name, email: existingUser.email, image: existingUser.image };
 };
 
 /**
- * Retry mechanism for OAuth sign-in
+ * OAuth sign-in
  */
-const retryOAuthSignIn = async (userInfo: UserInfo, provider: Provider, providerAccountId: string) => {
-  let attempt = 0;
-  let success = false;
-  const maxAttempts = 5;
-  const retryDelay = 5000; // 5 seconds
+const oAuthSignIn = async (userInfo: UserInfo, provider: Provider, providerAccountId: string) => {
+  const response = (await api.auth.oAuthSignIn({
+    user: userInfo,
+    provider,
+    providerAccountId,
+  })) as ActionResponse;
 
-  while (attempt < maxAttempts) {
-    try {
-      // Attempt to sign in or create account
-      const response = (await api.auth.oAuthSignIn(
-        {
-          user: userInfo,
-          provider,
-          providerAccountId,
-        },
-        WAIT_TIMEOUT
-      )) as ActionResponse;
-
-      success = response.success;
-      if (success) break;
-    } catch (error) {
-      console.log(`Sign-in attempt ${attempt + 1} failed:`, error);
-      attempt++;
-      if (attempt < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay)); // Wait before retrying
-      }
-    }
-  }
-
-  return success;
+  return response.success;
 };
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -207,8 +186,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Create standardized user info
       const userInfo = createUserInfo(user, account, profile as GithubProfile | GoogleProfile);
 
-      // Retry mechanism for OAuth sign-in
-      return retryOAuthSignIn(userInfo, account.provider as Provider, account.providerAccountId);
+      return oAuthSignIn(userInfo, account.provider as Provider, account.providerAccountId);
     },
   },
 });

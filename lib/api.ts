@@ -13,10 +13,13 @@ interface RequestOptions {
   body?: unknown;
   timeout?: number;
   headers?: HeadersInit;
+  maxRetries?: number;
+  retryDelay?: number;
 }
 
 const makeApiRequest = async <T>(endpoint: string, options: RequestOptions = {}): Promise<ActionResponse<T>> => {
-  const { method = 'GET', body = null, timeout = 5000, headers = {} } = options;
+  const { method = 'GET', body = null, timeout = 5000, headers = {}, maxRetries, retryDelay } = options;
+
   const requestOptions: RequestInit = {
     method,
     headers: { ...headers },
@@ -26,7 +29,12 @@ const makeApiRequest = async <T>(endpoint: string, options: RequestOptions = {})
     requestOptions.body = JSON.stringify(body);
   }
 
-  return fetchHandler(`${API_BASE_URL}${endpoint}`, { ...requestOptions, timeout });
+  return fetchHandler(`${API_BASE_URL}${endpoint}`, {
+    ...requestOptions,
+    timeout,
+    maxRetries,
+    retryDelay,
+  });
 };
 
 const createApiMethods = <T>(basePath: string) => ({
@@ -39,11 +47,21 @@ const createApiMethods = <T>(basePath: string) => ({
 
 export const api = {
   auth: {
-    oAuthSignIn: (params: SignInWithOAuthParams, timeout: number) =>
-      makeApiRequest(`/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, { method: 'POST', body: params, timeout }),
+    oAuthSignIn: (params: SignInWithOAuthParams) =>
+      makeApiRequest(`/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, {
+        method: 'POST',
+        body: params,
+        maxRetries: 5,
+        retryDelay: 5000,
+      }),
   },
   users: {
     ...createApiMethods<IUser>('/users'),
+    getById: (id: string) =>
+      makeApiRequest<IUser>(`/users/${id}`, {
+        maxRetries: 3,
+        retryDelay: 3000,
+      }),
     getByEmail: (email: string) => makeApiRequest<IUser>('/users/email', { method: 'POST', body: { email } }),
   },
   accounts: {

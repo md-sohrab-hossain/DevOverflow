@@ -4,6 +4,8 @@ import handleError from './error';
 
 interface FetchOptions extends RequestInit {
   timeout?: number;
+  maxRetries?: number;
+  retryDelay?: number;
 }
 
 function isError(error: unknown): error is Error {
@@ -47,23 +49,32 @@ async function handleFetchError<T>(error: unknown, url: string): Promise<ActionR
 }
 
 export async function fetchHandler<T>(url: string, options: FetchOptions = {}): Promise<ActionResponse<T>> {
-  const { timeout = 5000, headers: customHeaders = {}, ...restOptions } = options;
+  const { timeout = 5000, headers: customHeaders = {}, maxRetries = 3, retryDelay = 1000, ...restOptions } = options;
 
-  const { controller, timeoutId } = createAbortController(timeout);
-  const headers = buildHeaders(customHeaders);
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    const { controller, timeoutId } = createAbortController(timeout);
+    const headers = buildHeaders(customHeaders);
 
-  const config: RequestInit = {
-    ...restOptions,
-    headers,
-    signal: controller.signal,
-  };
+    const config: RequestInit = {
+      ...restOptions,
+      headers,
+      signal: controller.signal,
+    };
 
-  try {
-    const response = await fetch(url, config);
-    clearTimeout(timeoutId);
-
-    return await handleResponse(response);
-  } catch (err) {
-    return await handleFetchError(err, url);
+    try {
+      const response = await fetch(url, config);
+      clearTimeout(timeoutId);
+      return await handleResponse(response);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (attempt === maxRetries - 1) {
+        return await handleFetchError(err, url);
+      }
+      await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+      attempt++;
+    }
   }
+
+  throw new Error('Max retries exceeded');
 }
