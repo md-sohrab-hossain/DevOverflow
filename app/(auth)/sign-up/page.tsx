@@ -8,7 +8,7 @@ import AuthForm from '@/components/forms/AuthForm';
 import { AUTH_FORM_CONFIGS } from '@/constants/formConfig';
 import ROUTES from '@/constants/routes';
 import { toast } from '@/hooks/use-toast';
-import { signUpWithCredentials } from '@/lib/actions/auth.action';
+import { signUpWithCredentials } from '@/lib/actions/signUp.action';
 import { SignUpSchema } from '@/lib/validations';
 
 const FORM_TYPE = 'SIGN_UP';

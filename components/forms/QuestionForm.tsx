@@ -10,7 +10,8 @@ import { z } from 'zod';
 
 import ROUTES from '@/constants/routes';
 import { toast } from '@/hooks/use-toast';
-import { createQuestion } from '@/lib/actions/question.action';
+import { createQuestion } from '@/lib/actions/createQuestion.action';
+import { editQuestion } from '@/lib/actions/editQuestion.action';
 import { AskQuestionSchema } from '@/lib/validations';
 
 import { QuestionContentField } from './QuestionContentField';
@@ -19,30 +20,36 @@ import { QuestionTitleField } from './QuestionTitleField';
 import { Button } from '../ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 
-type AskQuestionFormData = z.infer<typeof AskQuestionSchema>;
+type QuestionFormData = z.infer<typeof AskQuestionSchema>;
 
-const QuestionForm = () => {
+interface QuestionFormParams {
+  question?: Question;
+  isEdit?: boolean;
+}
+
+const QuestionForm = ({ question, isEdit = false }: QuestionFormParams) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const editorRef = useRef<MDXEditorMethods>(null);
 
-  const form = useForm<AskQuestionFormData>({
+  const form = useForm<QuestionFormData>({
     resolver: zodResolver(AskQuestionSchema),
     defaultValues: {
-      title: '',
-      content: '',
-      tags: [],
+      title: question?.title || '',
+      content: question?.content || '',
+      tags: question?.tags.map(tag => tag.name) || [],
     },
   });
 
-  const handleQuestionForm = async (data: AskQuestionFormData) => {
+  const handleQuestionForm = async (data: QuestionFormData) => {
     startTransition(async () => {
-      const result = await createQuestion(data);
+      const result =
+        isEdit && question ? await editQuestion({ questionId: question._id, ...data }) : await createQuestion(data);
 
       if (result.success) {
         toast({
           title: 'Success',
-          description: 'Question created successfully',
+          description: `Question ${isEdit ? 'updated' : 'created'} successfully`,
         });
 
         if (result.data) router.push(ROUTES.QUESTION(result.data._id));
