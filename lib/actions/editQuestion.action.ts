@@ -3,7 +3,7 @@
 import mongoose from 'mongoose';
 import { ZodSchema } from 'zod';
 
-import Question, { IQuestion } from '@/database/question.model';
+import Question, { IQuestionDoc } from '@/database/question.model';
 import TagQuestion from '@/database/tag-question.model';
 import Tag, { ITagDoc } from '@/database/tag.model';
 
@@ -43,7 +43,7 @@ import { EditQuestionSchema } from '../validations';
  *   questionId: "123"
  * });
  */
-export async function editQuestion(params: EditQuestionParams): Promise<ActionResponse<Question>> {
+export async function editQuestion(params: EditQuestionParams): Promise<ActionResponse<IQuestionDoc>> {
   // First, validate all input parameters
   const validationResult = await validateEditQuestion(params);
   if (validationResult instanceof Error) {
@@ -119,7 +119,7 @@ async function validateEditQuestion<T>(params: T) {
  * @param session - Database transaction session
  */
 async function updateQuestionContent(
-  question: mongoose.Document & IQuestion,
+  question: mongoose.Document & IQuestionDoc,
   title: string,
   content: string,
   session: mongoose.ClientSession
@@ -161,7 +161,7 @@ async function updateQuestionContent(
  * @param session - Database transaction session
  */
 async function processTagChanges(
-  question: mongoose.Document & IQuestion,
+  question: mongoose.Document & IQuestionDoc,
   newTags: string[],
   questionId: string,
   session: mongoose.ClientSession
@@ -187,7 +187,7 @@ async function processTagChanges(
     for (const tagName of tagsToAdd) {
       // Find existing tag or create new one (case-insensitive search)
       const existingTag = await Tag.findOneAndUpdate(
-        { name: { $regex: new RegExp(`^${tagName}$`, 'i') } },
+        { name: { $regex: `^${tagName}$`, $options: 'i' } },
         {
           $setOnInsert: { name: tagName }, // Only set name if creating new tag
           $inc: { questions: 1 }, // Increment question count for the tag

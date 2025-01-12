@@ -4,10 +4,10 @@ import Credentials from 'next-auth/providers/credentials';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
 
-import { IAccount } from '@/database/account.model';
+import { IAccount, IAccountDoc } from '@/database/account.model';
 import { api } from '@/lib/api';
 
-import { IUser } from './database/user.model';
+import { IUserDoc } from './database/user.model';
 import { SignInSchema } from './lib/validations';
 
 type Provider = 'github' | 'google';
@@ -77,6 +77,10 @@ const handleAccountLookup = async (
   return existingAccount.userId?.toString();
 };
 
+const verifyPassword = async (password: string, hashedPassword: string): Promise<boolean> => {
+  return bcrypt.compare(password, hashedPassword);
+};
+
 /**
  * Authorizes a user with credentials
  */
@@ -88,10 +92,11 @@ const authorizeUser = async (credentials: Partial<Record<string, unknown>>) => {
     }
 
     const { email, password } = validatedFields.data;
-    const account = (await api.accounts.getByProvider(email)) as ActionResponse<IAccount>;
-    const user = account?.data && ((await api.users.getById(account.data.userId.toString())) as ActionResponse<IUser>);
+    const account = (await api.accounts.getByProvider(email)) as ActionResponse<IAccountDoc>;
+    const user =
+      account?.data && ((await api.users.getById(account.data.userId.toString())) as ActionResponse<IUserDoc>);
 
-    if (!account?.data || !user?.data || !(await bcrypt.compare(password, account.data.password!))) {
+    if (!account?.data || !user?.data || !(await verifyPassword(password, account.data.password!))) {
       throw new Error('Invalid credentials');
     }
 

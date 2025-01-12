@@ -1,16 +1,11 @@
 'use server';
 
-import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
 import { z } from 'zod';
 
 import { signIn } from '@/auth';
-import Account from '@/database/account.model';
-import User from '@/database/user.model';
 
 import action from '../handlers/action';
 import handleError from '../handlers/error';
-import { NotFoundError } from '../http-errors';
 import { SignInSchema } from '../validations';
 
 async function validateSchema<T>(params: T, schema: z.ZodSchema): Promise<T | ErrorResponse> {
@@ -23,21 +18,6 @@ async function validateSchema<T>(params: T, schema: z.ZodSchema): Promise<T | Er
 
 function isErrorResponse(data: Pick<AuthCredentials, 'email' | 'password'> | ErrorResponse): data is ErrorResponse {
   return 'error' in data;
-}
-
-async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
-}
-
-async function findUserByEmail(email: string, session?: mongoose.ClientSession) {
-  return User.findOne({ email }).session(session || null);
-}
-
-async function findAccount(email: string) {
-  return Account.findOne({
-    provider: 'credentials',
-    providerAccountId: email,
-  });
 }
 
 async function authenticateUser(email: string, password: string) {
@@ -54,15 +34,6 @@ export async function signInWithCredentials(
 
   try {
     const { email, password } = validatedData;
-
-    const user = await findUserByEmail(email);
-    if (!user) throw new NotFoundError('User');
-
-    const account = await findAccount(email);
-    if (!account) throw new NotFoundError('Account');
-
-    const isValidPassword = await verifyPassword(password, account.password);
-    if (!isValidPassword) throw new Error('Invalid password');
 
     await authenticateUser(email, password);
     return { success: true };

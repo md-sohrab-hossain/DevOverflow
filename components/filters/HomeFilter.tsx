@@ -9,11 +9,12 @@ import { Button } from '../ui/button';
 
 const filters = [
   { name: 'Newest', value: 'newest' },
-  { name: 'React', value: 'react' },
+  { name: 'React', value: 'reactjs' },
   { name: 'NodeJs', value: 'nodejs' },
+  { name: 'Javascript', value: 'javascript' },
+  { name: 'Typescript', value: 'typescript' },
   { name: 'Popular', value: 'popular' },
   { name: 'Html/Css', value: 'html/css' },
-  { name: 'Javascript', value: 'javascript' },
   { name: 'Recommended', value: 'recommended' },
 ];
 

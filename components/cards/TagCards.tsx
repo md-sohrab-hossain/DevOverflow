@@ -57,7 +57,7 @@ const TagCard = ({ _id, name, questions, showCount, remove, isButton, handleRemo
       {Content}
     </button>
   ) : (
-    <Link href={ROUTES.TAGS(_id)} className="pointer-events-none flex items-center justify-between gap-2">
+    <Link href={ROUTES.TAG(_id)} className="pointer-events-none flex items-center justify-between gap-2">
       {Content}
     </Link>
   );
