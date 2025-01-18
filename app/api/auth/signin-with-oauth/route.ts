@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import slugify from 'slugify';
 
 import Account from '@/database/account.model';
-import User, { IUser } from '@/database/user.model';
+import User, { IUserDoc } from '@/database/user.model';
 import handleError from '@/lib/handlers/error';
 import { ValidationError } from '@/lib/http-errors';
 import dbConnect from '@/lib/mongoose';
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
   await dbConnect();
 
+  let transactionCommitted = false;
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -37,10 +38,11 @@ export async function POST(request: Request) {
     const existingUser = await findOrCreateUser(userData, session);
     await findOrCreateAccount(existingUser._id, provider, providerAccountId, userData, session);
 
+    transactionCommitted = true;
     await session.commitTransaction(); // Finalizes and saves all changes made within the transaction.
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    await session.abortTransaction(); // Reverts any changes if something goes wrong, maintaining data consistency.
+    if (!transactionCommitted) await session.abortTransaction(); // Reverts any changes if something goes wrong, maintaining data consistency.
     return handleError(error, 'api') as APIErrorResponse;
   } finally {
     session.endSession();
@@ -73,7 +75,7 @@ const findOrCreateUser = async (userData: IUserData, session: mongoose.ClientSes
   return existingUser;
 };
 
-const updateUserIfNecessary = async (existingUser: IUser, userData: IUserData, session: mongoose.ClientSession) => {
+const updateUserIfNecessary = async (existingUser: IUserDoc, userData: IUserData, session: mongoose.ClientSession) => {
   const { name, image } = userData;
   const updatedData: { name?: string; image?: string } = {};
 
