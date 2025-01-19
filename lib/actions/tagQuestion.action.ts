@@ -8,22 +8,21 @@ import handleError from '../handlers/error';
 import { PaginatedSearchParamsSchema } from '../validations';
 
 // Types
-type SortOption = 'popular' | 'recent' | 'oldest' | 'name';
 type SortCriteria = { [key: string]: SortOrder };
 
 interface SearchParams {
   page?: number;
   pageSize?: number;
   query?: string;
-  filter?: SortOption;
+  filter?: string;
 }
 
 // Helper methods
-const getSortOrder = (filter?: SortOption): SortCriteria => {
+const getSortOrder = (filter?: string): SortCriteria => {
   // Define how documents should be sorted based on filter option
   // -1 means descending order (high to low)
   // 1 means ascending order (low to high)
-  const sortOrders: Record<SortOption, SortCriteria> = {
+  const sortOrders: Record<string, SortCriteria> = {
     popular: { questions: -1 as SortOrder }, // Most questions first
     recent: { createdAt: -1 as SortOrder }, // Newest first
     oldest: { createdAt: 1 as SortOrder }, // Oldest first
@@ -55,14 +54,16 @@ const getPagination = (page: number = 1, pageSize: number = 10) => {
 };
 
 // Main function
-export const getTags = async (params: SearchParams) => {
+export const getTagQuestion = async (
+  params: SearchParams
+): Promise<ActionResponse<{ tags: Tag[]; isNext: boolean }>> => {
   const validationResult = await action({
     params,
     schema: PaginatedSearchParamsSchema as ZodSchema,
   });
 
   if (validationResult instanceof Error) {
-    return handleError(validationResult);
+    return handleError(validationResult) as ErrorResponse;
   }
 
   try {
@@ -97,6 +98,6 @@ export const getTags = async (params: SearchParams) => {
       },
     };
   } catch (error) {
-    return handleError(error);
+    return handleError(error) as ErrorResponse;
   }
 };
