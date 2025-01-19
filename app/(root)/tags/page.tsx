@@ -15,7 +15,7 @@ const Tags = async ({ searchParams }: RouteParams) => {
     filter,
   });
 
-  const { tags } = (data || {}) as { tags: Tag[] }; // Type assertion here
+  const { tags } = (data || {}) as { tags: Tag[] };
 
   return (
     <>
@@ -30,10 +30,8 @@ const Tags = async ({ searchParams }: RouteParams) => {
         error={error}
         data={tags}
         empty={EMPTY_TAGS}
-        render={(
-          tags: Tag[] // Type the render prop
-        ) => (
-          <div className="mt-10 flex w-full flex-wrap justify-center gap-4">
+        render={(tags: Tag[]) => (
+          <div className="mt-10 flex w-full flex-wrap gap-4">
             {tags.map(tag => (
               <TagCard key={tag._id} _id={tag._id} name={tag.name} questions={tag.questions} showCount />
             ))}
