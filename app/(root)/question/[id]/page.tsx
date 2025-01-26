@@ -15,7 +15,7 @@ const getCachedQuestion = cache(async (id: string) => {
   const cookieStore = cookies();
   const hasBeenViewed = (await cookieStore).get(id);
 
-  const viewedCount = Number(hasBeenViewed?.value) || 1;
+  const viewedCount = Number(hasBeenViewed?.value) || 0;
   return await getQuestion({
     questionId: id,
     incrementView: viewedCount === 1,
