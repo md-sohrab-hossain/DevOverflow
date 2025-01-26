@@ -3,32 +3,42 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
+import { cn } from '@/lib/utils';
+
 interface MetricProps {
-  imgUrl: string;
-  alt: string;
+  imgUrl?: string;
+  alt?: string;
   value: string | number;
-  title: string;
+  title?: string;
   href?: string;
-  textStyles: string;
+  textStyles?: string;
   imgStyles?: string;
   isAuthor?: boolean;
+  titleStyles?: string;
 }
 
-const MetricImage = ({ imgUrl, alt, imgStyles }: Pick<MetricProps, 'imgUrl' | 'alt' | 'imgStyles'>) => (
-  <Image src={imgUrl} width={16} height={16} alt={alt} className={`rounded-full object-contain ${imgStyles}`} />
-);
+const getInitials = (name: string): string => {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
 
-const MetricAvatar = ({ value }: { value: string | number }) => {
-  const getInitials = (name: string): string =>
-    name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-
-  return (
-    <Avatar>
+const Metric: React.FC<MetricProps> = ({
+  imgUrl,
+  alt = '',
+  value,
+  title,
+  href,
+  textStyles = '',
+  imgStyles = '',
+  isAuthor = false,
+  titleStyles = '',
+}) => {
+  const renderAvatar = () => (
+    <Avatar className="translate-y-[-2px]">
       <AvatarFallback
         className="primary-gradient size-3 rounded-full p-[2px] font-space-grotesk text-[9px] font-bold tracking-wider text-white"
         aria-label={`${value}'s initials`}
@@ -37,49 +47,34 @@ const MetricAvatar = ({ value }: { value: string | number }) => {
       </AvatarFallback>
     </Avatar>
   );
-};
 
-const MetricText = ({
-  value,
-  title,
-  textStyles,
-  isAuthor = false,
-}: Pick<MetricProps, 'value' | 'title' | 'textStyles' | 'isAuthor'>) => (
-  <p className={`${textStyles} flex items-center gap-1`}>
-    {value}
-    <span className={`small-regular line-clamp-1 ${isAuthor ? 'max-sm:hidden' : ''}`}>{title}</span>
-  </p>
-);
-
-const MetricContent = ({ imgUrl, alt, value, title, textStyles, imgStyles, isAuthor }: Omit<MetricProps, 'href'>) => (
-  <>
-    {imgUrl ? <MetricImage imgUrl={imgUrl} alt={alt} imgStyles={imgStyles} /> : <MetricAvatar value={value} />}
-    <MetricText value={value} title={title} textStyles={textStyles} isAuthor={isAuthor} />
-  </>
-);
-
-const Metric = ({ imgUrl, alt, value, title, href, textStyles, imgStyles, isAuthor }: MetricProps) => {
-  const content = (
-    <MetricContent
-      imgUrl={imgUrl}
-      alt={alt}
-      value={value}
-      title={title}
-      textStyles={textStyles}
-      imgStyles={imgStyles}
-      isAuthor={isAuthor}
-    />
+  const renderImage = () => (
+    <Image src={imgUrl!} width={16} height={16} alt={alt} className={`rounded-full object-contain ${imgStyles}`} />
   );
 
-  if (href) {
-    return (
-      <Link href={href} className="flex-center gap-1">
-        {content}
-      </Link>
-    );
-  }
+  const renderContent = () => (
+    <>
+      {imgUrl ? renderImage() : renderAvatar()}
+      <p className={`${textStyles} flex items-center gap-1`}>
+        {value}
+        {title && (
+          <span className={cn(`small-regular line-clamp-1 ${isAuthor ? 'max-sm:hidden' : ''}`, titleStyles)}>
+            {title}
+          </span>
+        )}
+      </p>
+    </>
+  );
 
-  return <div className="flex-center gap-1">{content}</div>;
+  const content = renderContent();
+
+  return href ? (
+    <Link href={href} className="flex-center gap-1">
+      {content}
+    </Link>
+  ) : (
+    <div className="flex-center gap-1">{content}</div>
+  );
 };
 
 export default Metric;
