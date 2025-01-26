@@ -1,3 +1,5 @@
+'use server';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FilterQuery } from 'mongoose';
 import { ZodSchema } from 'zod';

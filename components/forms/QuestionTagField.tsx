@@ -77,7 +77,7 @@ export const QuestionTagField = ({ form, field }: QuestionTagFieldProps) => {
       {field.value.length > 0 && (
         <div className="flex-start mt-2.5 flex-wrap gap-2.5">
           {field.value.map((tag: string) => (
-            <TagCard key={tag} _id={tag} name={tag} remove isButton handleRemove={() => handleTagRemove(tag)} />
+            <TagCard compact key={tag} _id={tag} name={tag} remove isButton handleRemove={() => handleTagRemove(tag)} />
           ))}
         </div>
       )}

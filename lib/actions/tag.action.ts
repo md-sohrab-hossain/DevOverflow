@@ -1,3 +1,5 @@
+'use server';
+
 import { FilterQuery, SortOrder } from 'mongoose';
 import { ZodSchema } from 'zod';
 

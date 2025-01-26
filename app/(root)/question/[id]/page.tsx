@@ -1,6 +1,7 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import React from 'react';
+import { cache } from 'react';
 
 import TagCard from '@/components/cards/TagCards';
 import { Preview } from '@/components/editor/preview';
@@ -10,24 +11,34 @@ import ROUTES from '@/constants/routes';
 import { getQuestion } from '@/lib/actions/getQuestion.action';
 import { formatNumber, getTimeStamp } from '@/lib/utils';
 
+const getCachedQuestion = cache(async (id: string) => {
+  const cookieStore = cookies();
+  const hasBeenViewed = (await cookieStore).get(id);
+
+  const viewedCount = Number(hasBeenViewed?.value) || 1;
+  return await getQuestion({
+    questionId: id,
+    incrementView: viewedCount === 1,
+  });
+});
+
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
-  const { success, data: question } = await getQuestion({ questionId: id });
+
+  // Use cached version which prevents multiple API calls on refresh
+  const { success, data: question } = await getCachedQuestion(id);
 
   if (!success || !question) return redirect('/404');
 
   const { author, createdAt, answers, views, tags, content, title } = question;
 
   return (
-    <div className="question-details-container">
+    <>
       <QuestionHeader author={author} title={title} />
-
       <QuestionMetrics createdAt={createdAt} answers={answers} views={views} />
-
       <Preview content={content} />
-
       <QuestionTags tags={tags} />
-    </div>
+    </>
   );
 };
 
@@ -46,12 +57,10 @@ const QuestionHeader = ({ author, title }: { author: Author; title: string }) =>
           <p className="paragraph-semibold text-dark-300_light700">{author.name}</p>
         </Link>
       </div>
-
       <div className="flex justify-end">
         <p>Votes</p>
       </div>
     </div>
-
     <h2 className="h2-semibold text-dark200_light900 mt-3.5 w-full">{title}</h2>
   </div>
 );

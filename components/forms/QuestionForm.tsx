@@ -52,7 +52,7 @@ const QuestionForm = ({ question, isEdit = false }: QuestionFormParams) => {
           description: `Question ${isEdit ? 'updated' : 'created'} successfully`,
         });
 
-        if (result.data) router.push(ROUTES.QUESTION(result.data._id));
+        if (result.data) router.push(ROUTES.QUESTION(result.data._id as string));
       } else {
         toast({
           title: `Error ${result.status}`,
