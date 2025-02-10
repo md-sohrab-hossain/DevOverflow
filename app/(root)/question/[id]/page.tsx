@@ -5,6 +5,7 @@ import { cache } from 'react';
 
 import TagCard from '@/components/cards/TagCards';
 import { Preview } from '@/components/editor/preview';
+import AnswerForm from '@/components/forms/AnswerForm';
 import Metric from '@/components/Metric';
 import UserAvatar from '@/components/UserAvatar';
 import ROUTES from '@/constants/routes';
@@ -30,7 +31,7 @@ const QuestionDetails = async ({ params }: RouteParams) => {
 
   if (!success || !question) return redirect('/404');
 
-  const { author, createdAt, answers, views, tags, content, title } = question;
+  const { author, createdAt, answers, views, tags, content, title, _id } = question;
 
   return (
     <>
@@ -38,6 +39,7 @@ const QuestionDetails = async ({ params }: RouteParams) => {
       <QuestionMetrics createdAt={createdAt} answers={answers} views={views} />
       <Preview content={content} />
       <QuestionTags tags={tags} />
+      <AnswerFormSection questionId={_id} />
     </>
   );
 };
@@ -97,6 +99,12 @@ const QuestionTags = ({ tags }: { tags: Tag[] }) => (
       <TagCard key={tag._id} _id={tag._id as string} name={tag.name} compact />
     ))}
   </div>
+);
+
+const AnswerFormSection = ({ questionId }: { questionId: string }) => (
+  <section className="my-5">
+    <AnswerForm questionId={questionId} />
+  </section>
 );
 
 export default QuestionDetails;

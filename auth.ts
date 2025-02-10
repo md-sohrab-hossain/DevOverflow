@@ -41,12 +41,12 @@ interface ExtendedSession extends Session {
 const getUsernameFromProfile = (
   provider: string,
   profile: GithubProfile | GoogleProfile | null | undefined,
-  userName: string
+  email: string
 ): string => {
   if (provider === 'github' && (profile as GithubProfile)?.login) {
-    return (profile as GithubProfile).login;
+    return `github_${(profile as GithubProfile).login}`;
   }
-  return userName.toLowerCase();
+  return `google_${email.split('@')[0].trim()}`;
 };
 
 /**
@@ -60,7 +60,7 @@ const createUserInfo = (
   name: user.name ?? '',
   email: user.email ?? '',
   image: user.image ?? '',
-  username: getUsernameFromProfile(account.provider, profile, user.name ?? ''),
+  username: getUsernameFromProfile(account.provider, profile, user.email ?? ''),
 });
 
 /**
@@ -88,23 +88,26 @@ const authorizeUser = async (credentials: Partial<Record<string, unknown>>) => {
   try {
     const validatedFields = SignInSchema.safeParse(credentials);
     if (!validatedFields.success) {
-      throw new Error('Invalid credentials format');
+      return null;
     }
 
     const { email, password } = validatedFields.data;
-    const account = (await api.accounts.getByProvider(email)) as ActionResponse<IAccountDoc>;
-    const user =
-      account?.data && ((await api.users.getById(account.data.userId.toString())) as ActionResponse<IUserDoc>);
+    const { data: existingAccount } = (await api.accounts.getByProvider(email)) as ActionResponse<IAccountDoc>;
+    if (!existingAccount) return null;
 
-    if (!account?.data || !user?.data || !(await verifyPassword(password, account.data.password!))) {
-      throw new Error('Invalid credentials');
-    }
+    const { data: existingUser } = (await api.users.getById(
+      existingAccount.userId.toString()
+    )) as ActionResponse<IUserDoc>;
+
+    if (!existingUser) return null;
+
+    if (!(await verifyPassword(password, existingAccount.password!))) return null;
 
     return {
-      id: user.data.id,
-      name: user.data.name,
-      email: user.data.email,
-      image: user.data.image,
+      id: existingUser.id,
+      name: existingUser.name,
+      email: existingUser.email,
+      image: existingUser.image,
     };
   } catch (error) {
     console.error('Auth error:', error);
@@ -139,7 +142,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // https://next-auth.js.org/configuration/providers/credentials
     Credentials({
       async authorize(credentials) {
-        return authorizeUser(credentials);
+        return await authorizeUser(credentials);
       },
     }),
   ],

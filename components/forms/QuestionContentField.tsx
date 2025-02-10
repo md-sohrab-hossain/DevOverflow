@@ -9,7 +9,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 
 type AskQuestionFormData = z.infer<typeof AskQuestionSchema>;
 
-const Editor = dynamic(() => import('../editor/index'), {
+const Editor = dynamic(() => import('@/components/editor'), {
   ssr: false,
 });
 

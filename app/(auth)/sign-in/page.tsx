@@ -28,9 +28,11 @@ const SignIn = () => {
 
       router.push(ROUTES.HOME);
     } else {
+      const message = result?.error?.message;
+
       toast({
         title: `Error ${result?.status}`,
-        description: result?.error?.message,
+        description: message && message.includes('credentials') ? 'Invalid Credentials' : message,
         variant: 'destructive',
       });
     }
