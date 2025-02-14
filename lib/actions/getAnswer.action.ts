@@ -7,7 +7,7 @@ import handleError from '../handlers/error';
 import { GetAnswersSchema } from '../validations';
 
 interface AnswerResponse {
-  answers: (typeof Answer)[];
+  answers: Answer[];
   isNext: boolean;
   totalAnswers: number;
 }
@@ -16,9 +16,9 @@ type SortOrder = 1 | -1;
 type SortCriteria = Record<string, SortOrder>;
 
 /**
- * Retrieves paginated and filtered answers for a specific question
- * @param params - Parameters for filtering and pagination
- * @returns Promise with answers, pagination info, and total count
+ * Retrieves paginated and filtered answers for a specific question.
+ * @param params - Parameters for filtering and pagination.
+ * @returns Promise with answers, pagination info, and total count.
  */
 export async function getAnswers(params: GetAnswersParams): Promise<ActionResponse<AnswerResponse>> {
   const validationResult = await validateParams(params);
@@ -52,7 +52,9 @@ export async function getAnswers(params: GetAnswersParams): Promise<ActionRespon
 }
 
 /**
- * Validates the input parameters using the GetAnswersSchema
+ * Validates the input parameters using the GetAnswersSchema.
+ * @param params - Parameters to validate.
+ * @returns Validation result or error.
  */
 async function validateParams(params: GetAnswersParams) {
   return action({
@@ -62,7 +64,10 @@ async function validateParams(params: GetAnswersParams) {
 }
 
 /**
- * Calculates pagination options based on page and pageSize
+ * Calculates pagination options based on page and pageSize.
+ * @param page - Current page number.
+ * @param pageSize - Number of items per page.
+ * @returns Pagination options.
  */
 function getPaginationOptions(page: number, pageSize: number) {
   return {
@@ -72,7 +77,9 @@ function getPaginationOptions(page: number, pageSize: number) {
 }
 
 /**
- * Determines the sort criteria based on the filter type
+ * Determines the sort criteria based on the filter type.
+ * @param filter - Filter type.
+ * @returns Sort criteria.
  */
 function getSortCriteria(filter?: string): SortCriteria {
   const sortOptions: Record<string, SortCriteria> = {
@@ -86,7 +93,11 @@ function getSortCriteria(filter?: string): SortCriteria {
 }
 
 /**
- * Fetches answers from the database with pagination and sorting
+ * Fetches answers from the database with pagination and sorting.
+ * @param questionId - ID of the question.
+ * @param pagination - Pagination options.
+ * @param sortCriteria - Sort criteria.
+ * @returns Fetched answers.
  */
 async function fetchAnswers(
   questionId: string,
@@ -101,7 +112,11 @@ async function fetchAnswers(
 }
 
 /**
- * Determines if there are more pages of results available
+ * Determines if there are more pages of results available.
+ * @param totalItems - Total number of items.
+ * @param skip - Number of items to skip.
+ * @param currentPageSize - Number of items on the current page.
+ * @returns True if there are more pages, otherwise false.
  */
 function hasNextPage(totalItems: number, skip: number, currentPageSize: number): boolean {
   return totalItems > skip + currentPageSize;

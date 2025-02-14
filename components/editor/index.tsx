@@ -27,7 +27,7 @@ import {
 } from '@mdxeditor/editor';
 import { basicDark } from 'cm6-theme-basic-dark';
 import { useTheme } from 'next-themes';
-import type { ForwardedRef } from 'react';
+import { Ref } from 'react';
 
 import '@mdxeditor/editor/style.css';
 import './dark-editor.css';
@@ -35,10 +35,10 @@ import './dark-editor.css';
 interface Props {
   value: string;
   fieldChange: (value: string) => void;
-  editorRef: ForwardedRef<MDXEditorMethods> | null;
+  editorRef: Ref<MDXEditorMethods> | null;
 }
 
-const Editor = ({ value, editorRef, fieldChange, ...props }: Props) => {
+const Editor = ({ value, editorRef, fieldChange }: Props) => {
   const { resolvedTheme } = useTheme();
 
   const theme = resolvedTheme === 'dark' ? [basicDark] : [];
@@ -62,6 +62,7 @@ const Editor = ({ value, editorRef, fieldChange, ...props }: Props) => {
         codeBlockPlugin({ defaultCodeBlockLanguage: '' }),
         codeMirrorPlugin({
           codeBlockLanguages: {
+            plaintext: 'plaintext',
             css: 'css',
             txt: 'txt',
             sql: 'sql',
@@ -71,10 +72,13 @@ const Editor = ({ value, editorRef, fieldChange, ...props }: Props) => {
             bash: 'bash',
             json: 'json',
             js: 'javascript',
+            javascript: 'javascript',
             ts: 'typescript',
-            '': 'unspecified',
+            typescript: 'typescript',
             tsx: 'TypeScript (React)',
             jsx: 'JavaScript (React)',
+            '': 'plaintext',
+            'N/A': 'plaintext',
           },
           autoLoadLanguageSupport: true,
           codeMirrorExtensions: theme,
@@ -106,7 +110,6 @@ const Editor = ({ value, editorRef, fieldChange, ...props }: Props) => {
           ),
         }),
       ]}
-      {...props}
     />
   );
 };

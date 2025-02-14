@@ -16,18 +16,20 @@ export class RequestError extends Error {
 export class ValidationError extends RequestError {
   constructor(fieldErrors: Record<string, string[]>) {
     const message = ValidationError.formatFieldErrors(fieldErrors);
-    super(400, message, fieldErrors);
+    super(200, message, fieldErrors);
+    this.name = 'ValidationError';
+    this.errors = fieldErrors;
   }
 
   // Format the validation errors into a human-readable string
   static formatFieldErrors(errors: Record<string, string[]>): string {
     return Object.entries(errors)
       .map(([field, messages]) => {
-        const formattedField = field.charAt(0).toUpperCase() + field.slice(1);
+        const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
         if (messages.includes('Required')) {
-          return `${formattedField} is required`;
+          return `${fieldName} is required`;
         } else {
-          return `${formattedField}: ${messages.join(' and ')}`;
+          return `${fieldName}: ${messages.join(' and ')}`;
         }
       })
       .join(', ');

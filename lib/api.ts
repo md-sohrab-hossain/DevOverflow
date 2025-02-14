@@ -69,4 +69,8 @@ export const api = {
     getByProvider: (providerAccountId: string) =>
       makeApiRequest<IAccount>('/accounts/provider', { method: 'POST', body: { providerAccountId } }),
   },
+  ai: {
+    getAnswer: (question: string, content: string, userAnswer?: string): APIResponse<string> =>
+      makeApiRequest('/ai/answers', { method: 'POST', body: { question, content, userAnswer }, timeout: 100000 }),
+  },
 };

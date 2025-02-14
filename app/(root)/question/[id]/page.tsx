@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
+import AllAnswers from '@/components/answers/AllAnswers';
 import TagCard from '@/components/cards/TagCards';
 import { Preview } from '@/components/editor/preview';
 import AnswerForm from '@/components/forms/AnswerForm';
 import Metric from '@/components/Metric';
 import UserAvatar from '@/components/UserAvatar';
 import ROUTES from '@/constants/routes';
-// import { getAnswers } from '@/lib/actions/getAnswer.action';
+import { getAnswers } from '@/lib/actions/getAnswer.action';
 import { getQuestion } from '@/lib/actions/getQuestion.action';
 import { formatNumber, getTimeStamp } from '@/lib/utils';
 
@@ -32,18 +33,16 @@ const QuestionDetails = async ({ params }: RouteParams) => {
 
   if (!success || !question) return redirect('/404');
 
-  // const {
-  //   success: areAnswersLoaded,
-  //   data: answersResult,
-  //   error: answersError,
-  // } = await getAnswers({
-  //   questionId: id,
-  //   page: 1,
-  //   pageSize: 10,
-  //   filter: 'latest',
-  // });
-
-  // console.log('ANSWERS', answersResult);
+  const {
+    success: areAnswersLoaded,
+    data: answersResult,
+    error: answersError,
+  } = await getAnswers({
+    questionId: id,
+    page: 1,
+    pageSize: 10,
+    filter: 'latest',
+  });
 
   const { author, createdAt, answers, views, tags, content, title, _id } = question;
 
@@ -53,7 +52,8 @@ const QuestionDetails = async ({ params }: RouteParams) => {
       <QuestionMetrics createdAt={createdAt} answers={answers} views={views} />
       <Preview content={content} />
       <QuestionTags tags={tags} />
-      <AnswerFormSection questionId={_id} />
+      <ShowAnswers result={answersResult} isLoaded={areAnswersLoaded} isError={answersError} />
+      <AnswerFormSection questionId={_id} questionTitle={title} questionContent={content} />
     </>
   );
 };
@@ -115,9 +115,24 @@ const QuestionTags = ({ tags }: { tags: Tag[] }) => (
   </div>
 );
 
-const AnswerFormSection = ({ questionId }: { questionId: string }) => (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ShowAnswers = ({ result, isLoaded, isError }: any) => (
   <section className="my-5">
-    <AnswerForm questionId={questionId} />
+    <AllAnswers data={result?.answers} success={isLoaded} error={isError} totalAnswers={result?.totalAnswers || 0} />
+  </section>
+);
+
+const AnswerFormSection = ({
+  questionId,
+  questionTitle,
+  questionContent,
+}: {
+  questionId: string;
+  questionTitle: string;
+  questionContent: string;
+}) => (
+  <section className="my-5">
+    <AnswerForm questionId={questionId} questionTitle={questionTitle} questionContent={questionContent} />
   </section>
 );
 

@@ -12,9 +12,9 @@ import handleError from '../handlers/error';
 import { AnswerServerSchema } from '../validations';
 
 /**
- * Creates a new answer for a question and updates the question's answer count
- * @param params - Object containing the answer content and question ID
- * @returns Promise resolving to either a success response with the created answer or an error response
+ * Creates a new answer for a question and updates the question's answer count.
+ * @param params - Object containing the answer content and question ID.
+ * @returns Promise resolving to either a success response with the created answer or an error response.
  */
 export async function createAnswer(params: CreateAnswerParams): Promise<ActionResponse> {
   // Step 1: Validate input parameters and user authorization
@@ -61,7 +61,9 @@ export async function createAnswer(params: CreateAnswerParams): Promise<ActionRe
 }
 
 /**
- * Validates the input parameters and user authorization
+ * Validates the input parameters and user authorization.
+ * @param params - Parameters to validate.
+ * @returns Validation result or error.
  */
 async function validateInput<T>(params: T) {
   return action({
@@ -72,7 +74,12 @@ async function validateInput<T>(params: T) {
 }
 
 /**
- * Performs the database operations to create an answer and update the question
+ * Performs the database operations to create an answer and update the question.
+ * @param content - Content of the answer.
+ * @param questionId - ID of the question.
+ * @param userId - ID of the user.
+ * @param session - Mongoose session.
+ * @returns Created answer document.
  */
 async function createAnswerAndUpdateQuestion({
   content,
@@ -85,7 +92,6 @@ async function createAnswerAndUpdateQuestion({
   userId: string;
   session: mongoose.ClientSession;
 }): Promise<IAnswerDoc> {
-  // Find the question
   const question = await Question.findById(questionId);
   if (!question) {
     throw new Error('Question not found');
