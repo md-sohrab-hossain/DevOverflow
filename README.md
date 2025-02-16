@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>ByteOverflow - A Modern Developer Q&A Platform</h1>
+  <h1>DevOverflow - A Modern Developer Q&A Platform</h1>
 
   <div>
     <img src="https://img.shields.io/badge/-TypeScript-black?style=for-the-badge&logoColor=white&logo=typescript&color=3178C6" alt="typescript" />
@@ -13,7 +13,7 @@
 
 ## 🚀 Overview
 
-ByteOverflow is a modern Q&A platform for developers, inspired by StackOverflow but enhanced with AI capabilities and modern features. Built with the latest web technologies, it provides a space for developers to ask questions, share knowledge, and grow together.
+DevOverflow is a modern Q&A platform for developers, inspired by StackOverflow but enhanced with AI capabilities and modern features. Built with the latest web technologies, it provides a space for developers to ask questions, share knowledge, and grow together.
 
 ## ⚙️ Tech Stack
 
@@ -65,8 +65,8 @@ ByteOverflow is a modern Q&A platform for developers, inspired by StackOverflow 
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/your-username/ByteOverflow.git
-cd ByteOverflow
+git clone https://github.com/your-username/DevOverflow.git
+cd DevOverflow
 ```
 
 2. **Install dependencies**
@@ -136,4 +136,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
     <img src="https://img.shields.io/badge/Gmail-333333?style=for-the-badge&logo=gmail&logoColor=red" target="_blank"/>
 </a>
 
-Project Link: [https://github.com/your-username/ByteOverflow](https://github.com/your-username/ByteOverflow)
+Project Link: [https://github.com/your-username/DevOverflow](https://github.com/your-username/DevOverflow)
