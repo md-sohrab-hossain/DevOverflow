@@ -135,5 +135,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 <a href="mailto:md.soharubhossen@gmail.com" target="_blank">
     <img src="https://img.shields.io/badge/Gmail-333333?style=for-the-badge&logo=gmail&logoColor=red" target="_blank"/>
 </a>
-
-Project Link: [https://github.com/your-username/DevOverflow](https://github.com/your-username/DevOverflow)
