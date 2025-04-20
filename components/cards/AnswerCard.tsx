@@ -1,12 +1,17 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import ROUTES from '@/constants/routes';
+import { hasVoted } from '@/lib/actions/vote.action';
 import { getTimeStamp } from '@/lib/utils';
 
 import { Preview } from '../editor/preview';
 import UserAvatar from '../UserAvatar';
+import Votes from '../votes/Votes';
 
-const AnswerCard = ({ _id, author, content, createdAt }: Answer) => {
+const AnswerCard = ({ _id, author, content, createdAt, upvotes, downvotes }: Answer) => {
+  const hasVotedPromise = hasVoted({ targetId: _id, targetType: 'answer' });
+
   const renderAuthorInfo = () => (
     <div className="flex flex-1 items-start gap-1 sm:items-center">
       <UserAvatar
@@ -25,7 +30,17 @@ const AnswerCard = ({ _id, author, content, createdAt }: Answer) => {
     </div>
   );
 
-  const renderVotes = () => <div className="flex justify-end">Votes</div>;
+  const renderVotes = () => (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Votes
+        targetType="answer"
+        targetId={_id}
+        hasVotedPromise={hasVotedPromise}
+        upvotes={upvotes}
+        downvotes={downvotes}
+      />
+    </Suspense>
+  );
 
   return (
     <article className="light-border border-b py-10">
