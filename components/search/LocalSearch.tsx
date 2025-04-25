@@ -13,6 +13,8 @@ interface LocalSearchProps {
   imgSrc: string;
   placeholder: string;
   className?: string;
+  iconPosition?: 'left' | 'right';
+  otherClasses?: string;
 }
 
 interface SearchInputProps {
@@ -120,21 +122,30 @@ const SearchInput = ({ placeholder, value, onChange }: SearchInputProps) => (
  * 3. After DEBOUNCE_DELAY ms, URL updates with search query
  * 4. URL updates trigger any necessary data fetching in parent components
  */
-const LocalSearch = ({ imgSrc, placeholder, route, className = '' }: LocalSearchProps) => {
+const LocalSearch = ({ 
+  imgSrc, 
+  placeholder, 
+  route, 
+  className = '',
+  iconPosition = 'left',
+  otherClasses
+}: LocalSearchProps) => {
   const { searchQuery, setSearchQuery } = useSearchWithDebounce(route);
 
   return (
     <div
       className={`
-      background-light800_darkgradient 
-      flex min-h-[56px] grow 
-      items-center gap-4 
-      rounded-[10px] px-4 
-      ${className}
-    `}
+        background-light800_darkgradient 
+        flex min-h-[56px] grow 
+        items-center gap-4 
+        rounded-[10px] px-4 
+        ${className}
+        ${otherClasses}
+      `}
     >
-      <SearchIcon imgSrc={imgSrc} />
+      {iconPosition === 'left' && <SearchIcon imgSrc={imgSrc} />}
       <SearchInput placeholder={placeholder} value={searchQuery} onChange={setSearchQuery} />
+      {iconPosition === 'right' && <SearchIcon imgSrc={imgSrc} />}
     </div>
   );
 };
