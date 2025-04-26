@@ -4,12 +4,15 @@ import { EMPTY_ANSWERS } from '@/constants/states';
 import AnswerCard from '../cards/AnswerCard';
 import DataRenderer from '../DataRenderer';
 import CommonFilter from '../filters/CommonFilter';
+import Pagination from '../Pagination';
 
 interface Props extends ActionResponse<Answer[]> {
   totalAnswers: number;
+  page: number;
+  isNext: boolean;
 }
 
-const AllAnswers = ({ data, success, error, totalAnswers }: Props) => {
+const AllAnswers = ({ page, isNext, data, success, error, totalAnswers }: Props) => {
   const renderHeader = () => (
     <div className="flex items-center justify-between">
       <h3 className="primary-text-gradient">
@@ -34,6 +37,7 @@ const AllAnswers = ({ data, success, error, totalAnswers }: Props) => {
     <div className="mt-11">
       {renderHeader()}
       {renderAnswers()}
+      <Pagination page={page} isNext={isNext} />
     </div>
   );
 };

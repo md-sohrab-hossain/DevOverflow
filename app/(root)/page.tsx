@@ -4,6 +4,7 @@ import QuestionCard from '@/components/cards/QuestionCards';
 import DataRenderer from '@/components/DataRenderer';
 import CommonFilter from '@/components/filters/CommonFilter';
 import HomeFilter from '@/components/filters/HomeFilter';
+import Pagination from '@/components/Pagination';
 import LocalSearch from '@/components/search/LocalSearch';
 import { Button } from '@/components/ui/button';
 import { HomePageFilters } from '@/constants/filters';
@@ -42,17 +43,17 @@ const QuestionList = ({ questions }: { questions: Question[] }) => (
 
 const Home = async ({ searchParams }: RouteParams) => {
   // Extract and process search parameters
-  const params = await searchParams;
+  const { page, pageSize, query, filter } = await searchParams;
   const queryParams = {
-    page: Number(params.page) || 1,
-    pageSize: Number(params.pageSize) || 10,
-    query: params.query || '',
-    filter: params.filter || '',
+    page: Number(page) || 1,
+    pageSize: Number(pageSize) || 10,
+    query: query || '',
+    filter: filter || '',
   };
 
   // Fetch questions data
   const { success, data, error } = await getAllQuestions(queryParams);
-  const { questions } = data || {};
+  const { questions, isNext } = data || {};
 
   return (
     <>
@@ -67,6 +68,8 @@ const Home = async ({ searchParams }: RouteParams) => {
         empty={EMPTY_QUESTION}
         render={questions => <QuestionList questions={questions} />} // render prop pattern
       />
+
+      <Pagination page={page} isNext={isNext || false} />
     </>
   );
 };

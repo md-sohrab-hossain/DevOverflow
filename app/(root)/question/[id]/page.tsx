@@ -70,9 +70,11 @@ interface AnswerFormSectionProps {
 interface AnswersResult {
   answers: Answer[];
   totalAnswers: number;
+  isNext: boolean;
 }
 
 interface ShowAnswersProps {
+  page: string;
   result: AnswersResult | null;
   isLoaded: boolean;
   isError: ErrorResponse['error'] | undefined;
@@ -164,7 +166,12 @@ const QuestionDetails = async ({ params, searchParams }: RouteParams) => {
       <QuestionTags tags={tags} />
 
       {/* Answers Section */}
-      <ShowAnswers result={answersResult || null} isLoaded={areAnswersLoaded} isError={answersError || undefined} />
+      <ShowAnswers
+        page={page}
+        result={answersResult || null}
+        isLoaded={areAnswersLoaded}
+        isError={answersError || undefined}
+      />
 
       {/* Answer Form Section */}
       <AnswerFormSection questionId={_id} questionTitle={title} questionContent={content} />
@@ -277,9 +284,16 @@ const QuestionTags = ({ tags }: { tags: Tag[] }) => (
  *
  * Displays all answers to the question with loading and error states
  */
-const ShowAnswers: React.FC<ShowAnswersProps> = ({ result, isLoaded, isError }) => (
+const ShowAnswers: React.FC<ShowAnswersProps> = ({ result, isLoaded, isError, page }) => (
   <section className="my-5">
-    <AllAnswers data={result?.answers} success={isLoaded} error={isError} totalAnswers={result?.totalAnswers || 0} />
+    <AllAnswers
+      page={Number(page) || 1}
+      isNext={result?.isNext || false}
+      data={result?.answers}
+      success={isLoaded}
+      error={isError}
+      totalAnswers={result?.totalAnswers || 0}
+    />
   </section>
 );
 
