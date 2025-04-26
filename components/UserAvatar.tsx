@@ -41,7 +41,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         <Image
           src={imageUrl}
           alt={`${name}'s avatar`}
-          className="object-cover"
+          className="w-full object-cover"
           width={DEFAULT_AVATAR_SIZE}
           height={DEFAULT_AVATAR_SIZE}
           quality={100}
