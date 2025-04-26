@@ -78,12 +78,6 @@ interface ShowAnswersProps {
   isError: ErrorResponse['error'] | undefined;
 }
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 /**
  * Caches the question data to prevent unnecessary refetches
  * Also handles view count incrementing
