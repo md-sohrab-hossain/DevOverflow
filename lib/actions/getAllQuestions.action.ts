@@ -1,7 +1,7 @@
 'use server';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, SortOrder } from 'mongoose';
 import { ZodSchema } from 'zod';
 
 import { Question, Tag } from '@/database';
@@ -12,7 +12,7 @@ import { PaginatedSearchParamsSchema } from '../validations';
 
 type FilterConditions = {
   filterQuery: FilterQuery<typeof Question>;
-  sortCriteria: { [key: string]: number };
+  sortCriteria: { [key: string]: SortOrder };
 };
 
 /**
@@ -33,15 +33,14 @@ type FilterConditions = {
 export async function getAllQuestions(
   params: PaginatedSearchParams
 ): Promise<ActionResponse<{ questions: Question[]; isNext: boolean }>> {
-  const validationResult = await validateGetAllQuestions(params);
-
-  // Return an error response if validation fails
-  if (validationResult instanceof Error) {
-    return handleError(validationResult) as ErrorResponse;
-  }
-
   try {
-    // Handle the 'recommended' filter case (currently returning empty array)
+    const validationResult = await validateGetAllQuestions(params);
+
+    if (validationResult instanceof Error) {
+      return handleError(validationResult) as ErrorResponse;
+    }
+
+    // Handle the 'recommended' filter case
     if (params.filter === 'recommended') {
       return {
         success: true,
@@ -49,42 +48,39 @@ export async function getAllQuestions(
       };
     }
 
-    // Extract parameters with default values
     const { page = 1, pageSize = 10, query: searchTerm, filter } = params;
-
-    // Calculate pagination parameters (skip and limit)
     const { skip, limit } = calculatePaginationParams(page, pageSize);
 
-    // Build the search query based on the search term
     const searchQuery = await buildSearchQuery(searchTerm);
-
-    // Get filter and sort criteria based on the provided filter type
     const { filterQuery, sortCriteria } = await getFilterConditions(filter);
 
-    // Combine the search and filter queries into a final query
+    // Combine search and filter queries
     const finalQuery = { ...searchQuery, ...filterQuery };
 
-    // Execute database queries in parallel: total count and actual data fetching
+    // Execute database queries in parallel
     const [totalQuestions, questions] = await Promise.all([
       Question.countDocuments(finalQuery),
       fetchQuestionsFromDB(finalQuery, sortCriteria, skip, limit),
     ]);
 
-    // Determine if there are more pages of results
     const isNext = hasMorePages(totalQuestions, skip, questions.length);
 
-    // Return the formatted response
     return {
       success: true,
       data: {
-        questions: JSON.parse(JSON.stringify(questions)), // Remove MongoDB-specific fields
+        questions: JSON.parse(JSON.stringify(questions)),
         isNext,
       },
     };
   } catch (error) {
-    // Handle unexpected errors
     console.error('Error in getAllQuestions:', error);
-    return handleError(error) as ErrorResponse;
+    return {
+      success: true,
+      data: {
+        questions: [],
+        isNext: false,
+      },
+    };
   }
 }
 
@@ -143,7 +139,7 @@ async function buildSearchQuery(searchTerm?: string) {
  * @returns Promise of filter conditions
  */
 async function getFilterConditions(filterType?: string): Promise<FilterConditions> {
-  const defaultSort = { createdAt: -1 };
+  const defaultSort = { createdAt: -1 as SortOrder };
 
   const findTagByName = async (name: string) => {
     try {
@@ -155,21 +151,26 @@ async function getFilterConditions(filterType?: string): Promise<FilterCondition
     }
   };
 
-  const getDefaultFilterConditions = (sortCriteria: Record<string, number>) => ({
+  const getDefaultFilterConditions = (sortCriteria: { [key: string]: SortOrder }) => ({
     filterQuery: {},
     sortCriteria,
   });
 
-  const predefinedFilters: any = {
-    newest: getDefaultFilterConditions(defaultSort),
-    unanswered: getDefaultFilterConditions({ answers: 0 }),
-    popular: getDefaultFilterConditions({ upvotes: -1 }),
+  const predefinedFilters: Record<string, FilterConditions> = {
+    newest: getDefaultFilterConditions({ createdAt: -1 as SortOrder }),
+    unanswered: {
+      filterQuery: { answers: 0 },
+      sortCriteria: { createdAt: -1 as SortOrder },
+    },
+    popular: getDefaultFilterConditions({ upvotes: -1 as SortOrder }),
   };
 
-  if (predefinedFilters[filterType || '']) {
-    return predefinedFilters[filterType || ''];
+  // Handle predefined filters
+  if (filterType && predefinedFilters[filterType]) {
+    return predefinedFilters[filterType];
   }
 
+  // Handle tag-based filtering
   if (filterType) {
     const tag = await findTagByName(filterType);
     if (tag) {
@@ -194,17 +195,29 @@ async function getFilterConditions(filterType?: string): Promise<FilterCondition
  */
 async function fetchQuestionsFromDB(
   query: FilterQuery<typeof Question>,
-  sortCriteria: any,
+  sortCriteria: { [key: string]: SortOrder },
   skip: number,
   limit: number
 ) {
-  return Question.find(query)
-    .populate('tags', 'name')
-    .populate('author', 'name image')
-    .lean()
-    .sort(sortCriteria)
-    .skip(skip)
-    .limit(limit);
+  try {
+    // First check if there are any matching questions
+    const count = await Question.countDocuments(query);
+
+    if (count === 0) {
+      return [];
+    }
+
+    return Question.find(query)
+      .populate('tags', 'name')
+      .populate('author', 'name image')
+      .lean()
+      .sort(sortCriteria)
+      .skip(skip)
+      .limit(limit);
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    return [];
+  }
 }
 
 /**

@@ -105,8 +105,9 @@ const getCachedQuestion = cache(async (id: string): Promise<ActionResponse<Quest
  *
  * @param {RouteParams} params - Route parameters containing question ID
  */
-const QuestionDetails = async ({ params }: RouteParams) => {
+const QuestionDetails = async ({ params, searchParams }: RouteParams) => {
   const { id } = await params;
+  const { page, pageSize, filter } = await searchParams;
 
   // Fetch question data
   const { success, data: question, error } = await getCachedQuestion(id);
@@ -122,12 +123,12 @@ const QuestionDetails = async ({ params }: RouteParams) => {
     success: areAnswersLoaded,
     data: answersResult,
     error: answersError,
-  } = (await getAnswers({
+  } = await getAnswers({
     questionId: id,
-    page: 1,
-    pageSize: 10,
-    filter: 'latest',
-  })) as ActionResponse<AnswersResult>;
+    page: Number(page) || 1,
+    pageSize: Number(pageSize) || 10,
+    filter,
+  });
 
   // Get voting status for the question
   const hasVotedPromise = hasVoted({
